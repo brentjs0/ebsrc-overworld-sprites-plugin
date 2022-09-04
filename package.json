@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/package",
+  "name": "ebsrc-sprite-grouping-plugin",
+  "version": "1.0.0",
+  "description": "A plugin for extracting and re-inserting sprite grouping images from an ebsrc project in PNG format.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "brentjs0",
+  "license": "BSL-1.0",
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "^18.7.3"
+  },
+  "dependencies": {
+    "fs-extra": "^10.1.0",
+    "js-yaml": "^4.1.0"
+  }
+}
