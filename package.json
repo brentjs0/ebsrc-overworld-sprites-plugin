@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package",
-  "name": "ebsrc-sprite-grouping-plugin",
+  "name": "ebsrc-overworld-sprites-plugin",
   "version": "1.0.0",
   "description": "A plugin for extracting and re-inserting sprite grouping images from an ebsrc project in PNG format.",
   "main": "index.js",
