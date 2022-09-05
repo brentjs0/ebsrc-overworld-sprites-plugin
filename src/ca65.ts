@@ -1,4 +1,4 @@
-import { isOptionalString, isSignificantString, splitAndTrimCSV } from './utility';
+import { isNullishOrEmpty, splitAndTrimCSV, substringByLength } from './utility';
 
 export interface CA65Line {
     lineNumber: number;
@@ -67,6 +67,10 @@ export function getArgumentListFromPseudoFunctionCall(pseudoFunctionCall: string
         pseudoFunctionCall.lastIndexOf(')'));
 }
 
+export function getStringTextFromCA65Literal(stringExpression: string) {
+    return substringByLength(stringExpression, 1, stringExpression.length - 2);
+}
+
 export function parseCA65Number(numberString: string | undefined): number {
 
     if (numberString) {
@@ -110,7 +114,7 @@ function createLine(lineNumber: number, regExpMatch: RegExpMatchArray): CA65Line
         instruction: regExpMatch.groups?.instruction,
         operandList: regExpMatch.groups?.operands,
         comment: regExpMatch.groups?.comment,
-        isSignificantToAssembler: isSignificantString(regExpMatch.groups?.label) || isSignificantString(regExpMatch.groups?.instruction),
+        isSignificantToAssembler: !isNullishOrEmpty(regExpMatch.groups?.label) || !isNullishOrEmpty(regExpMatch.groups?.instruction),
     };
 }
 

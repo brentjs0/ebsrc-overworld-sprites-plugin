@@ -5,14 +5,16 @@ import {
     countCA65DatumBytes,
     DatumTypeString,
     getArgumentListFromPseudoFunctionCall,
+    getStringTextFromCA65Literal,
     parseCA65Number,
     readCA65LineData,
     readCA65Lines,
 } from './ca65';
 import { CA65BlockError } from './ca65-error';
-import { Sprite } from './sprite';
-import { IncompleteSpriteGrouping, SpriteGrouping } from './sprite-grouping';
-import { stringEqualsIgnoreCase, substringByLength } from './utility';
+import { validateIncompleteSprite, IncompleteSprite } from './sprite';
+import { SpriteGroupPalette } from './sprite-group-palette';
+import { IncompleteSpriteGrouping, SpriteGrouping, validateIncompleteSpriteGrouping, validateSpriteGrouping } from './sprite-grouping';
+import { stringEqualsIgnoreCase } from './utility';
 
 export async function extractSpriteGroupingPointers(api: PluginApi): Promise<string[]> {
     const spriteGroupingPointersFileContents: string = await api.getSourceText(filePaths.sourceSpriteGroupingPointers);
@@ -111,7 +113,7 @@ function validateSpriteGroupingData(lines: CA65Line[], data: CA65Datum[], byteCo
 }
 
 function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIndex: number): IncompleteSpriteGrouping {
-    const grouping: IncompleteSpriteGrouping = {};
+    const grouping: Partial<IncompleteSpriteGrouping> = {};
 
     const data: CA65Datum[] = lines.flatMap(l => readCA65LineData(l));
     const byteCount: number = countCA65DatumBytes(data);
@@ -120,7 +122,7 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     grouping.spriteGroupingDataLabel = lines[0].label;
 
     if (byteCount <= 0) {
-        return grouping;
+        return castToIncompleteSpriteGrouping(grouping, filePaths.sourceSpriteGroupingData, lines);
     }
 
     grouping.binaryGraphicsDataBankPath = filePaths.sourceSpriteBinaryDataDefault;
@@ -138,24 +140,33 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     grouping.bitOffsets56To63 = data[7].numericValue;
     grouping.binaryGraphicsDataLabel = getArgumentListFromPseudoFunctionCall(data[8].sourceExpressionText); // Bit offsets 64 to 71.
 
-    grouping.sprites = []; // Bit offsets 72 and greater.
-    for (const datum of data.slice(9)) {
-        grouping.sprites.push(parseSpriteGroupingItem(lines, datum));
-    }
-
-    const pngFileName = `${spriteGroupingPointerTableIndex.toString().padStart(3, '0')}_${grouping.binaryGraphicsDataLabel}.png`
+    const pngFileName = `${spriteGroupingPointerTableIndex.toString().padStart(4, '0')}_${grouping.binaryGraphicsDataLabel}.png`
     grouping.pngFilePath = `${filePaths.referenceSpriteGraphics}${pngFileName}`
 
-    return grouping;
+    grouping.sprites = []; // Bit offsets 72 and greater.
+    for (const datum of data.slice(9)) {
+        grouping.sprites.push(parseSpriteData(lines, datum));
+    }
+
+    return castToIncompleteSpriteGrouping(grouping, filePaths.sourceSpriteGroupingData, lines);
 }
 
-function parseSpriteGroupingItem(lines: CA65Line[], spriteGroupingItemDatum: CA65Datum): Partial<Sprite> {
+function castToIncompleteSpriteGrouping(grouping: Partial<IncompleteSpriteGrouping>, fileName: string, lines: CA65Line[]): IncompleteSpriteGrouping {
+    const errorMessage: string | undefined = validateIncompleteSpriteGrouping(grouping);
+    if (errorMessage !== undefined) {
+        throw new CA65BlockError(errorMessage, fileName, lines);
+    }
+
+    return grouping as IncompleteSpriteGrouping;
+}
+
+function parseSpriteData(lines: CA65Line[], spriteGroupingItemDatum: CA65Datum): IncompleteSprite {
     const operandParts: string[] = getArgumentListFromPseudoFunctionCall(spriteGroupingItemDatum.sourceExpressionText)
         .split('|')
         .map(p => p.trim());
 
-    let stringValue = undefined;
-    let numericValue = 0;
+    let stringValue: string | undefined = undefined;
+    let numericValue: number = 0;
     for (const operandPart of operandParts) {
         const number: number = parseCA65Number(operandPart);
         if (!Number.isNaN(number)) {
@@ -173,17 +184,29 @@ function parseSpriteGroupingItem(lines: CA65Line[], spriteGroupingItemDatum: CA6
         }
     }
 
-    return {
-        binaryGraphicsDataLabel: stringValue,
+    const incompleteSprite: IncompleteSprite = {
+        binaryGraphicsDataLabel: stringValue!,
         flipGraphicsHorizontally: (numericValue & 0b1) === 1,
         floatsWhenOnWater: (numericValue >>> 1) === 1
     }
+
+    return castToIncompleteSprite(incompleteSprite, filePaths.sourceSpriteGroupingData, lines);
+
+}
+
+function castToIncompleteSprite(sprite: Partial<IncompleteSprite>, fileName: string, lines: CA65Line[]): IncompleteSprite {
+    const errorMessage: string | undefined = validateIncompleteSprite(sprite);
+    if (errorMessage !== undefined) {
+        throw new CA65BlockError(errorMessage, fileName, lines);
+    }
+
+    return sprite as IncompleteSprite;
 }
 
 function assertIsDatumType(lines: CA65Line[], datum: CA65Datum, datumType: DatumTypeString) {
     if (datum.type !== datumType) {
         throw new CA65BlockError(
-            `A '${datum.type}' value was encountered where a '${datumType}' value was expected.`,
+            `A "${datum.type}" value was encountered where a "${datumType}" value was expected.`,
             filePaths.sourceSpriteGroupingData,
             lines,
             datum.line);
@@ -203,7 +226,7 @@ function assertDatumIsNumeric(lines: CA65Line[], datum: CA65Datum) {
 function assertLineContainsInstruction(lines: CA65Line[], line: CA65Line, instruction: string) {
     if (line?.instruction === undefined) {
         throw new CA65BlockError(
-            `No instruction was present where a '${instruction}' instruction was expected.`,
+            `No instruction was present where a "${instruction}" instruction was expected.`,
             filePaths.sourceSpriteGroupingData,
             lines,
             line);
@@ -212,14 +235,14 @@ function assertLineContainsInstruction(lines: CA65Line[], line: CA65Line, instru
     if ((line.instruction.startsWith('.') && !stringEqualsIgnoreCase(line.instruction, instruction)) ||
         line.instruction !== instruction) {
             throw new CA65BlockError(
-                `The instruction '${line.instruction}' was present where a '${instruction}' instruction was expected.`,
+                `The instruction "${line.instruction}" was present where a "${instruction}" instruction was expected.`,
                 filePaths.sourceSpriteGroupingData,
                 lines,
                 line);
     }
 }
 
-export async function extractBank11(api: PluginApi, spriteGroupings: IncompleteSpriteGrouping[]): Promise<SpriteGrouping[]> {
+export async function extractBank11(api: PluginApi, incompleteSpriteGroupings: IncompleteSpriteGrouping[]): Promise<SpriteGrouping[]> {
     const bank11FileContents: string = await api.getSourceText(filePaths.sourceSpriteBinaryDataDefault);
     const lineReader: Generator<CA65Line> = readCA65Lines(bank11FileContents);
     let currentSpriteGroupings: IncompleteSpriteGrouping[] | undefined = undefined;
@@ -232,7 +255,7 @@ export async function extractBank11(api: PluginApi, spriteGroupings: IncompleteS
         
         if (line.label !== undefined) {
             // Check if we've arrived at the address for a block of binary sprite graphics data.
-            const spriteGroupingsThatUseTheseGraphics = spriteGroupings.filter(sg => sg.binaryGraphicsDataLabel === line.label);
+            const spriteGroupingsThatUseTheseGraphics = incompleteSpriteGroupings.filter(sg => sg.binaryGraphicsDataLabel === line.label);
             if (spriteGroupingsThatUseTheseGraphics.length > 0) {
 
                 // If this is the first block we've found, make it the current set of groupings being processed.
@@ -257,7 +280,7 @@ export async function extractBank11(api: PluginApi, spriteGroupings: IncompleteS
         assignBinaryGraphicsFilePaths(linesInCurrentGraphicsDataBlock, currentSpriteGroupings);
     }
 
-    return spriteGroupings as any;
+    return incompleteSpriteGroupings as SpriteGrouping[];
 }
 
 function assignBinaryGraphicsFilePaths(lines: CA65Line[], spriteGroupingsThatUseTheseGraphics: IncompleteSpriteGrouping[]) {
@@ -265,9 +288,17 @@ function assignBinaryGraphicsFilePaths(lines: CA65Line[], spriteGroupingsThatUse
         lines,
         spriteGroupingsThatUseTheseGraphics);
 
-    for (const incompleteSpriteGrouping of spriteGroupingsThatUseTheseGraphics) {
-        for (const sprite of incompleteSpriteGrouping.sprites ?? []) {
+    for (const spriteGroupingWithoutPaths of spriteGroupingsThatUseTheseGraphics) {
+        for (const sprite of spriteGroupingWithoutPaths.sprites ?? []) {
             sprite.binaryGraphicsFilePath = graphicsFilePathsByBinaryDataLabel[sprite.binaryGraphicsDataLabel];
+        }
+
+        const spriteGroupingErrorMessage: string | undefined = validateSpriteGrouping(spriteGroupingWithoutPaths);
+        if (spriteGroupingErrorMessage !== undefined) {
+            throw new CA65BlockError(
+                spriteGroupingErrorMessage,
+                filePaths.sourceSpriteBinaryDataDefault,
+                lines);
         }
     }
 }
@@ -290,9 +321,28 @@ function parseBinaryGraphicsFilePaths(lines: CA65Line[], spriteGroupingsThatUseT
             line.operandList !== undefined) {
 
             graphicsFilePathsByBinaryDataLabel[currentLabel] = 
-                `src/bin/US/${substringByLength(line.operandList, 1, line.operandList.length - 2)}`;
+                `src/bin/US/${getStringTextFromCA65Literal(line.operandList)}`;
         }
     }
 
     return graphicsFilePathsByBinaryDataLabel;
 }
+
+// export async function extractSpriteGroupPalettesFromBank03(api: PluginApi): Promise<SpriteGroupPalette[]> {
+//     const bank03FileContents: string = await api.getSourceText(filePaths.sourceSpriteGroupPaletteDataDefault);
+//     const lineReader: Generator<CA65Line> = readCA65Lines(bank03FileContents, 'SPRITE_GROUP_PALETTES');
+    
+//     for (const line of lines) {
+//         if (line?.label !== undefined &&
+//             binaryGraphicsDataLabels.includes(line.label)) {
+//             currentLabel = line.label;
+//         }
+//         if (currentLabel !== undefined &&
+//             line.instruction === 'BINARY' &&
+//             line.operandList !== undefined) {
+
+//             graphicsFilePathsByBinaryDataLabel[currentLabel] = 
+//                 `src/bin/US/${getStringTextFromCA65Literal(line.operandList)}`;
+//         }
+//     }
+// }

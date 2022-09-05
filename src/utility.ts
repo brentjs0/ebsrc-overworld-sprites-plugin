@@ -16,14 +16,12 @@ export function isOptionalString(value: any): value is string | undefined {
     return typeName === 'undefined' || typeName === 'string';
 }
 
-export function isSignificantString(value: any) {
-    return isString(value) && value.trim() !== '';
+export function isNullish(value: any): value is undefined | null {
+    return value === undefined || value === null;
 }
 
-export function assert(truth: any, exceptionMessage: string) {
-    if (!truth) {
-        throw new Error(exceptionMessage);
-    }
+export function isNullishOrEmpty(value: any): value is undefined | null | '' {
+    return isNullish(value) || (isString(value) && value.trim() === '');
 }
 
 export function splitAndTrimCSV(str: string): string[] {

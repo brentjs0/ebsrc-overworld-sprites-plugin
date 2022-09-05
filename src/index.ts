@@ -12,6 +12,7 @@ export const filePaths = {
     sourceSpriteGroupingPointers: 'src/data/sprite_grouping_pointers.asm',
     sourceSpriteGroupingData: 'src/data/sprite_grouping_data.asm',
     sourceSpriteBinaryDataDefault: 'src/bankconfig/US/bank11.asm',
+    sourceSpriteGroupPaletteDataDefault: 'src/bankconfig/US/bank03.asm',
     referenceSpriteGroupings: 'overworld_sprites/sprite_groupings.yml',
     referenceSpriteGraphics: 'overworld_sprites/'
 } as const;
@@ -37,17 +38,10 @@ const api: PluginApi =
 }
 
 async function extractReference(api: PluginApi) {
-    try {
-        const spriteGroupingDataLabels: string[] = await extractSpriteGroupingPointers(api);
-        const incompleteSpriteGroupings: IncompleteSpriteGrouping[] = await extractSpriteGroupingData(api, spriteGroupingDataLabels);
-        const spriteGroupings = await extractBank11(api, incompleteSpriteGroupings);
-        api.writeReference(filePaths.referenceSpriteGroupings, jsYaml.dump(spriteGroupings, {sortKeys: sortYAMLKeys}));
-    }
-    catch (thrownValue) {
-        if (thrownValue instanceof Error) {
-            console.error(thrownValue);
-        }
-    }
+    const spriteGroupingDataLabels: string[] = await extractSpriteGroupingPointers(api);
+    const incompleteSpriteGroupings: IncompleteSpriteGrouping[] = await extractSpriteGroupingData(api, spriteGroupingDataLabels);
+    const spriteGroupings = await extractBank11(api, incompleteSpriteGroupings);
+    api.writeReference(filePaths.referenceSpriteGroupings, jsYaml.dump(spriteGroupings, {sortKeys: sortYAMLKeys}));
 }
 
 function sortYAMLKeys(key1: any, key2: any): number {
