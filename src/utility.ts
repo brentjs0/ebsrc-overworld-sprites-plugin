@@ -27,3 +27,15 @@ export function isNullishOrEmpty(value: any): value is undefined | null | '' {
 export function splitAndTrimCSV(str: string): string[] {
     return str.split(',').map(s => s.trim());
 }
+
+export function firstItem<T>(arrayLike: ArrayLike<T>): T | undefined {
+    return arrayLike.length > 0
+        ? arrayLike[0]
+        : undefined;
+}
+
+export function lastItem<T>(arrayLike: ArrayLike<T>): T | undefined {
+    return arrayLike.length > 0
+        ? arrayLike[arrayLike.length - 1]
+        : undefined;
+}

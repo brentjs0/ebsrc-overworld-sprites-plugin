@@ -1,4 +1,4 @@
-import { isNullishOrEmpty, splitAndTrimCSV, substringByLength } from './utility';
+import { firstItem, isNullishOrEmpty, lastItem, splitAndTrimCSV, substringByLength } from './utility';
 
 export interface CA65Line {
     lineNumber: number;
@@ -67,7 +67,14 @@ export function getArgumentListFromPseudoFunctionCall(pseudoFunctionCall: string
         pseudoFunctionCall.lastIndexOf(')'));
 }
 
-export function getStringTextFromCA65Literal(stringExpression: string) {
+export function isCA65StringLiteral(value: any): value is string {
+    return typeof value === 'string' &&
+        value.length >= 2 &&
+        firstItem(value) === '"' &&
+        lastItem(value) === '"';
+}
+
+export function getTextFromCA65StringLiteral(stringExpression: string) {
     return substringByLength(stringExpression, 1, stringExpression.length - 2);
 }
 

@@ -2,8 +2,9 @@ import * as fs from 'fs-extra';
 import * as jsYaml from 'js-yaml';
 import * as path from 'path';
 
-import { extractBank11, extractSpriteGroupingData, extractSpriteGroupingPointers } from './extract';
+import { extractBank11, extractSpriteGroupingData, extractSpriteGroupingPointers, extractSpriteGroupPalettesFromBank03 } from './extract';
 import { spriteKeyDisplayOrder } from './sprite';
+import { spriteGroupPaletteKeyDisplayOrder } from './sprite-group-palette';
 import { IncompleteSpriteGrouping, spriteGroupingKeyDisplayOrder } from './sprite-grouping';
 
 const joinPath = path.join;
@@ -14,6 +15,7 @@ export const filePaths = {
     sourceSpriteBinaryDataDefault: 'src/bankconfig/US/bank11.asm',
     sourceSpriteGroupPaletteDataDefault: 'src/bankconfig/US/bank03.asm',
     referenceSpriteGroupings: 'overworld_sprites/sprite_groupings.yml',
+    referenceSpriteGroupPalettes: 'overworld_sprites/sprite_group_palettes.yml',
     referenceSpriteGraphics: 'overworld_sprites/'
 } as const;
 
@@ -41,7 +43,9 @@ async function extractReference(api: PluginApi) {
     const spriteGroupingDataLabels: string[] = await extractSpriteGroupingPointers(api);
     const incompleteSpriteGroupings: IncompleteSpriteGrouping[] = await extractSpriteGroupingData(api, spriteGroupingDataLabels);
     const spriteGroupings = await extractBank11(api, incompleteSpriteGroupings);
-    api.writeReference(filePaths.referenceSpriteGroupings, jsYaml.dump(spriteGroupings, {sortKeys: sortYAMLKeys}));
+    const palettes = await extractSpriteGroupPalettesFromBank03(api);
+    api.writeReference(filePaths.referenceSpriteGroupPalettes, jsYaml.dump(palettes, { sortKeys: sortYAMLKeys }));
+    api.writeReference(filePaths.referenceSpriteGroupings, jsYaml.dump(spriteGroupings, { sortKeys: sortYAMLKeys }));
 }
 
 function sortYAMLKeys(key1: any, key2: any): number {
@@ -51,7 +55,8 @@ function sortYAMLKeys(key1: any, key2: any): number {
 
     const keyOrderLists = [
         spriteGroupingKeyDisplayOrder as string[],
-        spriteKeyDisplayOrder as string[]
+        spriteKeyDisplayOrder as string[],
+        spriteGroupPaletteKeyDisplayOrder as string[],
     ];
 
     for (const keyOrderList of keyOrderLists) {

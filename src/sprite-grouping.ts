@@ -2,13 +2,13 @@ import { IncompleteSprite, Sprite, validateSprite } from './sprite';
 import { isNullish, isNullishOrEmpty } from './utility';
 
 type BaseSpriteGrouping = {
-    spriteGroupingDataLabel: string;
-    binaryGraphicsDataBankPath?: string;
-    binaryGraphicsDataLabel?: string;
+    label: string;
+    binaryBankPath?: string;
+    binaryLabel?: string;
     pngFilePath?: string;
     tilesHigh?: number;
     tilesWide?: number;
-    palette?: number;
+    paletteNumber?: number;
     bitOffsets12To15?: number;
     bitOffsets16To23?: number;
     bitOffset31?: number;
@@ -25,13 +25,13 @@ export type SpriteGrouping = BaseSpriteGrouping & {
 
 export type SpriteGroupingKey = keyof SpriteGrouping;
 export const spriteGroupingKeyDisplayOrder: SpriteGroupingKey[] = [
-    'spriteGroupingDataLabel',
-    'binaryGraphicsDataBankPath',
-    'binaryGraphicsDataLabel',
+    'label',
+    'binaryBankPath',
+    'binaryLabel',
     'pngFilePath',
     'tilesHigh',
     'tilesWide',
-    'palette',
+    'paletteNumber',
     'sprites',
     'bitOffsets12To15',
     'bitOffsets16To23',
@@ -64,24 +64,20 @@ export type IncompleteSpriteGrouping = BaseSpriteGrouping & {
 }
 
 export function validateIncompleteSpriteGrouping(value: Partial<IncompleteSpriteGrouping>): string | undefined {
-    if (isNullishOrEmpty(value?.spriteGroupingDataLabel)) {
-        return getMissingSpriteGroupingPropertyErrorMessage('spriteGroupingDataLabel');
+    if (isNullishOrEmpty(value?.label)) {
+        return getMissingSpriteGroupingPropertyErrorMessage('label');
     }
 
     if (isNullish(value?.sprites)) {
         return undefined;
     }
 
-    if (isNullishOrEmpty(value?.binaryGraphicsDataLabel)) {
-        return getMissingSpriteGroupingPropertyErrorMessage('binaryGraphicsDataLabel');
+    if (isNullishOrEmpty(value?.binaryBankPath)) {
+        return getMissingSpriteGroupingPropertyErrorMessage('binaryBankPath');
     }
 
-    if (isNullishOrEmpty(value?.binaryGraphicsDataBankPath)) {
-        return getMissingSpriteGroupingPropertyErrorMessage('binaryGraphicsDataBankPath');
-    }
-
-    if (isNullishOrEmpty(value?.binaryGraphicsDataLabel)) {
-        return getMissingSpriteGroupingPropertyErrorMessage('binaryGraphicsDataLabel');
+    if (isNullishOrEmpty(value?.binaryLabel)) {
+        return getMissingSpriteGroupingPropertyErrorMessage('binaryLabel');
     }
 
     if (isNullishOrEmpty(value?.pngFilePath)) {
@@ -96,8 +92,8 @@ export function validateIncompleteSpriteGrouping(value: Partial<IncompleteSprite
         return getMissingSpriteGroupingPropertyErrorMessage('tilesWide');
     }
 
-    if (isNullish(value?.palette)) {
-        return getMissingSpriteGroupingPropertyErrorMessage('palette');
+    if (isNullish(value?.paletteNumber)) {
+        return getMissingSpriteGroupingPropertyErrorMessage('paletteNumber');
     }
 
     if (value.sprites.length < 8) {

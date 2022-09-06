@@ -1,22 +1,22 @@
 import { isNullish, isNullishOrEmpty,  } from './utility';
 
 type BaseSprite = {
-    binaryGraphicsDataLabel: string;
+    binaryLabel: string;
     flipGraphicsHorizontally: boolean;
     floatsWhenOnWater: boolean;
 }
 
 export type Sprite = BaseSprite & {
-    binaryGraphicsFilePath: string;
+    binaryFilePath: string;
 }
 
 export type IncompleteSprite = BaseSprite & {
-    binaryGraphicsFilePath?: string;
+    binaryFilePath?: string;
 }
 
 export function validateIncompleteSprite(value: Partial<Sprite>): string | undefined {
-    if (isNullishOrEmpty(value?.binaryGraphicsDataLabel)) {
-        return getMissingSpritePropertyErrorMessage('binaryGraphicsDataLabel');
+    if (isNullishOrEmpty(value?.binaryLabel)) {
+        return getMissingSpritePropertyErrorMessage('binaryLabel');
     }
 
     if (isNullish(value?.flipGraphicsHorizontally)) {
@@ -36,8 +36,8 @@ export function validateSprite(value: Partial<Sprite>): string | undefined {
         return errorMessage;
     }
     
-    if (isNullishOrEmpty(value?.binaryGraphicsFilePath)) {
-        getMissingSpritePropertyErrorMessage('binaryGraphicsFilePath');
+    if (isNullishOrEmpty(value?.binaryFilePath)) {
+        getMissingSpritePropertyErrorMessage('binaryFilePath');
     }
 
     return undefined;
@@ -49,8 +49,8 @@ function getMissingSpritePropertyErrorMessage(propertyName: SpriteKey) {
 
 export type SpriteKey = keyof Sprite;
 export const spriteKeyDisplayOrder: SpriteKey[] = [
-    'binaryGraphicsFilePath',
-    'binaryGraphicsDataLabel',
+    'binaryFilePath',
+    'binaryLabel',
     'flipGraphicsHorizontally',
     'floatsWhenOnWater'
 ];
