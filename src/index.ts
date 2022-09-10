@@ -3,9 +3,9 @@ import * as jsYaml from 'js-yaml';
 import * as path from 'path';
 
 import { extractBank11, extractSpriteGroupingData, extractSpriteGroupingPointers, extractSpriteGroupPalettePNGFromBinaries as extractPaletteBinaries, extractSpriteGroupPalettesFromBank03 } from './extract';
-import { spriteKeyDisplayOrder } from './sprite';
-import { SpriteGroupPalette, spriteGroupPaletteKeyDisplayOrder } from './sprite-group-palette';
-import { IncompleteSpriteGroup, SpriteGroup, spriteGroupKeyDisplayOrder } from './sprite-group';
+import { Sprite } from './data/sprite';
+import { SpriteGroupPalette } from './data/sprite-group-palette';
+import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
 import { dumpArrayAsYAMLWithNumericKeys } from './utility';
 
 const joinPath = path.join;
@@ -29,17 +29,14 @@ const api: PluginApi =
         ebsrcPath: 'C:/Users/brent/source/repos/ebsrc-project/ebsrc',
         referencePath: 'C:/Users/brent/source/repos/ebsrc-project/reference',
     },
-
     async getSourceBin(path: string): Promise<Buffer>
     {
         return await fs.readFile(joinPath(this.project.ebsrcPath, path));
     },
-
     async getSourceText(path: string): Promise<string>
     {
         return await fs.readFile(joinPath(this.project.ebsrcPath, path), 'utf8');
     },
-
     async writeReference(path: string, contents: any): Promise<void>
     {
         return await fs.outputFile(joinPath(this.project.referencePath, path), contents);
@@ -69,9 +66,9 @@ function sortYAMLKeys(key1: any, key2: any): number
 
     const keyOrderLists =
     [
-        spriteGroupKeyDisplayOrder as string[],
-        spriteKeyDisplayOrder as string[],
-        spriteGroupPaletteKeyDisplayOrder as string[],
+        SpriteGroup.displayOrder as string[],
+        Sprite.displayOrder as string[],
+        SpriteGroupPalette.displayOrder as string[],
     ];
 
     for (const keyOrderList of keyOrderLists)

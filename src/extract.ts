@@ -16,11 +16,11 @@ import
     readCA65Lines,
 } from './ca65';
 import { CA65BlockError } from './ca65-error';
-import { validateIncompleteSprite, IncompleteSprite } from './sprite';
-import { SpriteGroupPalette } from './sprite-group-palette';
-import { IncompleteSpriteGroup, SpriteGroup, validateIncompleteSpriteGroup, validateSpriteGroup } from './sprite-group';
+import { IncompleteSprite } from './data/sprite';
+import { SpriteGroupPalette } from './data/sprite-group-palette';
+import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
 import { stringEqualsIgnoreCase } from './utility';
-import { Color } from './color';
+import { Color } from './data/color';
 import { createPNG } from 'indexed-png';
 
 export async function extractSpriteGroupingPointers(api: PluginApi): Promise<string[]>
@@ -161,7 +161,7 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     group['Offset 12 to 15'] = data[1].numericValue & 0b00001111; // This is always 0b0000.
     group['Offset 16 to 23'] = data[2].numericValue;
     group['Offset 24 to 27'] = (data[3].numericValue & 0b11110000) >>> 4; // This is always 0b0001.
-    group['Palette'] = (data[3].numericValue & 0b00001110) >>> 1; // Bit offsets 28 to 30.
+    group['Original Palette'] = (data[3].numericValue & 0b00001110) >>> 1; // Bit offsets 28 to 30.
     group['Offset 31'] = data[3].numericValue >>> 7; // This is always 0b0.
     group['North/South Collision Width'] = data[4].numericValue;
     group['North/South Collision Height'] = data[5].numericValue;
@@ -178,12 +178,14 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
         group['Sprites'].push(parseSpriteData(lines, datum));
     }
 
+    group['Length'] = group['Sprites'].length;
+
     return castToIncompleteSpriteGroup(group, filePaths.spriteGroupingDataASM, lines);
 }
 
 function castToIncompleteSpriteGroup(group: Partial<IncompleteSpriteGroup>, fileName: string, lines: CA65Line[]): IncompleteSpriteGroup
 {
-    const errorMessage: string | undefined = validateIncompleteSpriteGroup(group);
+    const errorMessage: string | undefined = IncompleteSpriteGroup.validate(group);
     if (errorMessage !== undefined)
     {
         throw new CA65BlockError(errorMessage, fileName, lines);
@@ -234,7 +236,7 @@ function parseSpriteData(lines: CA65Line[], spriteDatum: CA65Datum): IncompleteS
 
 function castToIncompleteSprite(sprite: Partial<IncompleteSprite>, fileName: string, lines: CA65Line[]): IncompleteSprite
 {
-    const errorMessage: string | undefined = validateIncompleteSprite(sprite);
+    const errorMessage: string | undefined = IncompleteSprite.validate(sprite);
     if (errorMessage !== undefined)
     {
         throw new CA65BlockError(errorMessage, fileName, lines);
@@ -338,7 +340,7 @@ export async function extractBank11(api: PluginApi, incompleteSpriteGroups: Inco
         {
             sprite['Binary File Path'] = binaryPathsByLabel[sprite['Binary Label']];
         }
-        const spriteGroupErrorMessage: string | undefined = validateSpriteGroup(spriteGroup);
+        const spriteGroupErrorMessage: string | undefined = SpriteGroup.validate(spriteGroup);
         if (spriteGroupErrorMessage !== undefined)
         {
             throw new Error(spriteGroupErrorMessage);
