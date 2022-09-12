@@ -1,12 +1,17 @@
 import * as fs from 'fs-extra';
-import * as jsYaml from 'js-yaml';
 import * as path from 'path';
 
-import { extractBank11, extractSpriteGroupingData, extractSpriteGroupingPointers, extractSpriteGroupPalettePNGFromBinaries as extractPaletteBinaries, extractSpriteGroupPalettesFromBank03 } from './extract';
-import { Sprite } from './data/sprite';
-import { SpriteGroupPalette } from './data/sprite-group-palette';
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
-import { dumpArrayAsYAMLWithNumericKeys } from './utility';
+import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
+import
+{
+    extractBank03,
+    extractBank11 as extractBanks11to15,
+    extractPaletteBinaries,
+    extractSpriteGroupBinaries,
+    extractSpriteGroupingData,
+    extractSpriteGroupingPointers,
+} from './extract';
 
 const joinPath = path.join;
 
@@ -15,12 +20,18 @@ export const filePaths =
     spriteGroupingPointersASM: 'src/data/sprite_grouping_pointers.asm',
     spriteGroupingDataASM: 'src/data/sprite_grouping_data.asm',
     bank11ASM: 'src/bankconfig/US/bank11.asm',
+    bank12ASM: 'src/bankconfig/US/bank12.asm',
+    bank13ASM: 'src/bankconfig/US/bank13.asm',
+    bank14ASM: 'src/bankconfig/US/bank14.asm',
+    bank15ASM: 'src/bankconfig/US/bank15.asm',
     bank03ASM: 'src/bankconfig/US/bank03.asm',
     spriteGroupsYML: 'sprite_groups.yml',
     spriteGroupPalettesYML: 'sprite_group_palettes.yml',
     spriteGroupPalettesPNG: 'sprite_group_palettes.png',
     spriteGroupsDirectory: 'SpriteGroups/'
 } as const;
+
+const writtenPaths: string[] = [];
 
 const api: PluginApi =
 {
@@ -39,57 +50,23 @@ const api: PluginApi =
     },
     async writeReference(path: string, contents: any): Promise<void>
     {
-        return await fs.outputFile(joinPath(this.project.referencePath, path), contents);
+        const fullPath = joinPath(this.project.referencePath, path);
+        writtenPaths.push(fullPath);
+
+        return await fs.outputFile(fullPath, contents);
     }
 }
 
 async function extractReference(api: PluginApi)
 {
+    const incompleteSpriteGroupPalettes: IncompleteSpriteGroupPalette[] = await extractBank03(api);
+    const spriteGroupPalettes: SpriteGroupPalette[] = await extractPaletteBinaries(api, incompleteSpriteGroupPalettes);
+
     const spriteGroupingDataLabels: string[] = await extractSpriteGroupingPointers(api);
     const incompleteSpriteGroups: IncompleteSpriteGroup[] = await extractSpriteGroupingData(api, spriteGroupingDataLabels);
+    const spriteGroups: SpriteGroup[] = await extractBanks11to15(api, incompleteSpriteGroups);
 
-    const palettes: SpriteGroupPalette[] = await extractSpriteGroupPalettesFromBank03(api);
-    api.writeReference(filePaths.spriteGroupPalettesYML, dumpArrayAsYAMLWithNumericKeys(palettes, { sortKeys: sortYAMLKeys }));
-    await extractPaletteBinaries(api, palettes);
-
-    const spriteGroups: SpriteGroup[] = await extractBank11(api, incompleteSpriteGroups);
-    api.writeReference(filePaths.spriteGroupsYML, dumpArrayAsYAMLWithNumericKeys(spriteGroups, { sortKeys: sortYAMLKeys }));
-    
-}
-
-function sortYAMLKeys(key1: any, key2: any): number
-{
-    if (typeof key1 !== 'string' || typeof key2 !== 'string')
-    {
-        return 0;
-    }
-
-    const keyOrderLists =
-    [
-        SpriteGroup.displayOrder as string[],
-        Sprite.displayOrder as string[],
-        SpriteGroupPalette.displayOrder as string[],
-    ];
-
-    for (const keyOrderList of keyOrderLists)
-    {
-        if (keyOrderList.includes(key1) && keyOrderList.includes(key2))
-        {
-            return keyOrderList.indexOf(key1) - keyOrderList.indexOf(key2) ;
-        }
-    }
-
-    return 0;
-}
-
-function replacer(key: string, value: any): any
-{
-    if (Array.isArray(value) || typeof value === 'object')
-    {
-        return value;
-    }
-
-    return `${value} # comment`;
+    await extractSpriteGroupBinaries(api, spriteGroups, spriteGroupPalettes);
 }
 
 export type PluginApi =

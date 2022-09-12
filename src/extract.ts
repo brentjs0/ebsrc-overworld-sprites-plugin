@@ -1,4 +1,3 @@
-import * as path from 'path';
 import { Buffer } from 'node:buffer';
 
 import { filePaths, PluginApi } from '.';
@@ -16,12 +15,12 @@ import
     readCA65Lines,
 } from './ca65';
 import { CA65BlockError } from './ca65-error';
-import { IncompleteSprite } from './data/sprite';
-import { SpriteGroupPalette } from './data/sprite-group-palette';
+import { IncompleteSprite, Sprite } from './data/sprite';
+import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
-import { stringEqualsIgnoreCase } from './utility';
-import { Color } from './data/color';
-import { createPNG } from 'indexed-png';
+import { dumpArrayAsYAMLWithNumericKeys, stringEqualsIgnoreCase } from './utility';
+import { Color15 } from './data/color';
+import { IndexedPng } from './indexed-png';
 
 export async function extractSpriteGroupingPointers(api: PluginApi): Promise<string[]>
 {
@@ -154,9 +153,9 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
 
     group['Binary Bank Path'] = filePaths.bank11ASM;
 
-    const tilesHigh = data[0].numericValue; // Bit offsets 00 to 07.
-    const tilesWide = data[1].numericValue >>> 4; // Bit offsets 08 to 11.
-    group['Size'] = `${tilesWide * 8}x${tilesHigh * 8}`;
+    group['Tiles High'] = data[0].numericValue; // Bit offsets 00 to 07.
+    group['Tiles Wide'] = data[1].numericValue >>> 4; // Bit offsets 08 to 11.
+    group['Size'] = `${group['Tiles Wide'] * 8}x${group['Tiles High'] * 8}`;
 
     group['Offset 12 to 15'] = data[1].numericValue & 0b00001111; // This is always 0b0000.
     group['Offset 16 to 23'] = data[2].numericValue;
@@ -227,7 +226,7 @@ function parseSpriteData(lines: CA65Line[], spriteDatum: CA65Datum): IncompleteS
     {
         'Binary Label': stringValue!,
         'Flip Graphics Horizontally': (numericValue & 0b1) === 1,
-        'Float When On Water': (numericValue >>> 1) === 1
+        'Swim Flag': (numericValue >>> 1) === 1
     }
 
     return castToIncompleteSprite(incompleteSprite, filePaths.spriteGroupingDataASM, lines);
@@ -236,7 +235,7 @@ function parseSpriteData(lines: CA65Line[], spriteDatum: CA65Datum): IncompleteS
 
 function castToIncompleteSprite(sprite: Partial<IncompleteSprite>, fileName: string, lines: CA65Line[]): IncompleteSprite
 {
-    const errorMessage: string | undefined = IncompleteSprite.validate(sprite);
+    const errorMessage: string | undefined = IncompleteSprite.validateForExtract(sprite);
     if (errorMessage !== undefined)
     {
         throw new CA65BlockError(errorMessage, fileName, lines);
@@ -293,44 +292,56 @@ function assertLineContainsInstruction(lines: CA65Line[], line: CA65Line, instru
 
 export async function extractBank11(api: PluginApi, incompleteSpriteGroups: IncompleteSpriteGroup[]): Promise<SpriteGroup[]>
 {
-    const bank11FileContents: string = await api.getSourceText(filePaths.bank11ASM);
-    const lineReader: Generator<CA65Line> = readCA65Lines(bank11FileContents);
-    
     const binaryPathsByLabel: { [index: string]: string } = {};
 
-    let lines: CA65Line[] = [];
-    let labelsForAddress: string[] = [];
-    
-    for (const line of lineReader)
+    const bankPaths =
+    [
+        filePaths.bank11ASM,
+        filePaths.bank12ASM,
+        filePaths.bank13ASM,
+        filePaths.bank14ASM,
+        filePaths.bank15ASM
+    ];
+
+    for (const bankPath of bankPaths)
     {
-        if (!line.isSignificantToAssembler)
-        {
-            continue;
-        }
+        const bankFileContents: string = await api.getSourceText(bankPath);
+        const lineReader: Generator<CA65Line> = readCA65Lines(bankFileContents);
 
-        if (line.label !== undefined)
+        let lines: CA65Line[] = [];
+        let labelsForAddress: string[] = [];
+        
+        for (const line of lineReader)
         {
-            labelsForAddress.push(line.label);
-        }
-
-        if (line.instruction === 'BINARY')
-        {
-            if (!isCA65StringLiteral(line.operandList))
+            if (!line.isSignificantToAssembler)
             {
-                throw new CA65BlockError(
-                    'A BINARY macro call was found with an invalid file path operand.',
-                    filePaths.bank11ASM,
-                    lines,
-                    line);
-            }
-            const binaryPath = `src/bin/US/${getTextFromCA65StringLiteral(line.operandList)}`;
-            for (const label of labelsForAddress)
-            {
-                binaryPathsByLabel[label] = binaryPath;
+                continue;
             }
 
-            labelsForAddress = [];
-            lines = [];
+            if (line.label !== undefined)
+            {
+                labelsForAddress.push(line.label);
+            }
+
+            if (line.instruction === 'BINARY')
+            {
+                if (!isCA65StringLiteral(line.operandList))
+                {
+                    throw new CA65BlockError(
+                        'A BINARY macro call was found with an invalid file path operand.',
+                        bankPath,
+                        lines,
+                        line);
+                }
+                const binaryPath = `src/bin/US/${getTextFromCA65StringLiteral(line.operandList)}`;
+                for (const label of labelsForAddress)
+                {
+                    binaryPathsByLabel[label] = binaryPath;
+                }
+
+                labelsForAddress = [];
+                lines = [];
+            }
         }
     }
 
@@ -340,17 +351,53 @@ export async function extractBank11(api: PluginApi, incompleteSpriteGroups: Inco
         {
             sprite['Binary File Path'] = binaryPathsByLabel[sprite['Binary Label']];
         }
-        const spriteGroupErrorMessage: string | undefined = SpriteGroup.validate(spriteGroup);
+        const spriteGroupErrorMessage: string | undefined = SpriteGroup.validateForExtract(spriteGroup);
         if (spriteGroupErrorMessage !== undefined)
         {
             throw new Error(spriteGroupErrorMessage);
         }
     }
 
+    api.writeReference(filePaths.spriteGroupsYML, dumpArrayAsYAMLWithNumericKeys(incompleteSpriteGroups, { sortKeys: sortSpriteGroupKeys, replacer: replaceSpriteGroupValues }));
+
     return incompleteSpriteGroups as SpriteGroup[];
 }
 
-export async function extractSpriteGroupPalettesFromBank03(api: PluginApi): Promise<SpriteGroupPalette[]>
+function sortSpriteGroupKeys(key1: any, key2: any): number
+{
+    if (typeof key1 !== 'string' || typeof key2 !== 'string')
+    {
+        return 0;
+    }
+
+    const keyOrderLists =
+    [
+        SpriteGroup.keyDisplayOrder as string[],
+        Sprite.keyDisplayOrder as string[],
+    ];
+
+    for (const keyOrderList of keyOrderLists)
+    {
+        if (keyOrderList.includes(key1) && keyOrderList.includes(key2))
+        {
+            return keyOrderList.indexOf(key1) - keyOrderList.indexOf(key2) ;
+        }
+    }
+
+    return 0;
+}
+
+function replaceSpriteGroupValues(key: any, value: any): any
+{
+    if (key === 'Tiles Wide' || key === 'Tiles High')
+    {
+        return undefined
+    }
+
+    return value;
+}
+
+export async function extractBank03(api: PluginApi): Promise<IncompleteSpriteGroupPalette[]>
 {
     const bank03FileContents: string = await api.getSourceText(filePaths.bank03ASM);
     const lineReader: Generator<CA65Line> = readCA65Lines(bank03FileContents, 'SPRITE_GROUP_PALETTES');
@@ -359,9 +406,8 @@ export async function extractSpriteGroupPalettesFromBank03(api: PluginApi): Prom
         throw new Error(`SPRITE_GROUP_PALETTES could not be found in the source file ${filePaths.bank03ASM}.`);
     }
     const lines: CA65Line[] = [];
-    const spriteGroupPalettes: SpriteGroupPalette[] = [];
+    const spriteGroupPalettes: IncompleteSpriteGroupPalette[] = [];
 
-    let paletteNumber = 0;
     for (const line of lineReader)
     {
         lines.push(line);
@@ -385,13 +431,10 @@ export async function extractSpriteGroupPalettesFromBank03(api: PluginApi): Prom
                 else
                 {
                     const operandStringValue = getTextFromCA65StringLiteral(line.operandList);
-                    const fileName = path.basename(operandStringValue);
 
                     spriteGroupPalettes.push(
                     {
-                        number: paletteNumber++,
-                        binaryFilePath: `src/bin/US/${operandStringValue}`,
-                        pngFilePath: `${filePaths.spriteGroupsDirectory}${fileName}.png`
+                        'Binary File Path': `src/bin/US/${operandStringValue}`,
                     })
                 }
             }
@@ -405,37 +448,201 @@ export async function extractSpriteGroupPalettesFromBank03(api: PluginApi): Prom
     return spriteGroupPalettes;
 }
 
-export async function extractSpriteGroupPalettePNGFromBinaries(api: PluginApi, palettes: SpriteGroupPalette[])
+export async function extractPaletteBinaries(api: PluginApi, incompletePalettes: IncompleteSpriteGroupPalette[])
 {
-    const middleGray = 8355711;
-    const lastPaletteIndex = 128;
+    const pngWidth = 18;
+    const pngHeight = 17;
+    const lastPaletteIndex = incompletePalettes.length * 16;
 
-    const pngPalette: number[] = [];
-    pngPalette[lastPaletteIndex] = middleGray;
-    let paletteIndex = 0;
+    let pngPaletteIndex = 0;
 
-    let imageData: number[] = Array(19).fill(lastPaletteIndex);
-    let imageDataValue = 0;
+    const indexedPng: IndexedPng = IndexedPng.create(pngWidth, pngHeight);
+    indexedPng.setPaletteColor(lastPaletteIndex, Color15.create(15, 15, 15));
+    indexedPng.fillWithIndex(lastPaletteIndex);
 
-    for (const palette of palettes)
+    for (let paletteNumber = 0; paletteNumber < incompletePalettes.length; ++paletteNumber)
     {
-        const buffer: Buffer = await api.getSourceBin(palette.binaryFilePath);
+        const spriteGroupPalette = incompletePalettes[paletteNumber];
+        spriteGroupPalette.Palette = [];
 
-        for (let i = 0; i < buffer.length; i += 2)
+        const buffer: Buffer = await api.getSourceBin(spriteGroupPalette['Binary File Path']);
+
+        const y = (paletteNumber * 2) + 1;
+        let x = 1;
+
+        for (let bufferOffset = 0; bufferOffset < buffer.length; bufferOffset += 2)
         {
-            imageData.push(imageDataValue++);
+            const word = buffer.readUInt16LE(bufferOffset);
+            const blue5 = word >>> 10;
+            const green5 = (word & 0b0000_0011_1110_0000) >>> 5;
+            const red5 = word & 0b0000_0000_0001_1111;
 
-            const word = buffer.readUInt16LE(i);
-            const blue = Color.convertComponentTo8Bit(word >>> 10);
-            const green = Color.convertComponentTo8Bit((word & 0b0000_0011_1110_0000) >>> 5);
-            const red = Color.convertComponentTo8Bit(word & 0b0000_0000_0001_1111);
+            const color15 = Color15.create(red5, green5, blue5);
+            spriteGroupPalette.Palette.push(color15);
 
-            pngPalette[paletteIndex++] = blue | (green << 8) | (red << 16);
+            indexedPng.setPaletteColor(pngPaletteIndex, color15);
+            indexedPng.setPixelIndex(x, y, pngPaletteIndex);
+
+            pngPaletteIndex++;
+            x++;
         }
-        imageData = imageData.concat(Array(20).fill(lastPaletteIndex));
     }
 
-    imageData.push(lastPaletteIndex);
+    api.writeReference(filePaths.spriteGroupPalettesPNG, await indexedPng.toBuffer());
+    api.writeReference(filePaths.spriteGroupPalettesYML, dumpArrayAsYAMLWithNumericKeys(incompletePalettes, { replacer: replaceSpriteGroupPaletteValues }));
 
-    api.writeReference(filePaths.spriteGroupPalettesPNG, await createPNG(Buffer.from(imageData), pngPalette, 18))
+    return incompletePalettes as SpriteGroupPalette[];
+}
+
+function replaceSpriteGroupPaletteValues(key: any, value: any): any
+{
+    if (Array.isArray(value) && Color15.isColor15(value[0]))
+    {
+        return undefined
+    }
+
+    return value;
+}
+
+const bytesPerTile = 32;
+const rowsPerTile = 8;
+const pixelsPerRow = 8;
+const bitsPerPixel = 4;
+const spritesPerRow = 4;
+
+export async function extractSpriteGroupBinaries(api: PluginApi, spriteGroups: SpriteGroup[], spriteGroupPalettes: SpriteGroupPalette[])
+{
+    for (const spriteGroup of spriteGroups)
+    {
+        if (spriteGroup['Length'] === undefined || spriteGroup['Length'] === 0)
+        {
+            continue;
+        }
+
+        const spriteWidth = spriteGroup['Tiles Wide'] * pixelsPerRow;
+        const spriteHeight = spriteGroup['Tiles High'] * rowsPerTile;
+        const spriteRowCount = Math.ceil(spriteGroup['Length'] / spritesPerRow);
+
+        const palette: Color15[] = spriteGroupPalettes[spriteGroup['Original Palette']]['Palette'];
+        const indexedPng = IndexedPng.create(spriteWidth * spritesPerRow, spriteHeight * spriteRowCount, palette);
+        indexedPng.fillWithIndex(0);
+
+        let spriteOffsetX = 0;
+        let spriteOffsetY = 0;
+
+        if (spriteGroup['Sprites'] !== undefined)
+        {
+            let tileOffsetX = 0;
+            let tileOffsetY = 0;
+
+            for (let spriteIndex = 0; spriteIndex < spriteGroup['Sprites']?.length ?? 0; ++spriteIndex)
+            {
+                const sprite = spriteGroup['Sprites'][spriteIndex];
+
+                spriteOffsetX = (spriteIndex % spritesPerRow) * spriteWidth;
+                spriteOffsetY = Math.floor(spriteIndex / spritesPerRow) * spriteHeight;
+
+                let tileIndex = 0;
+                for await (const tile of extractTiles(api, sprite))
+                {
+                    [tileOffsetX, tileOffsetY] = calculateTileOffsets(
+                        tileIndex,
+                        spriteGroup['Tiles Wide'],
+                        sprite['Flip Graphics Horizontally'])
+
+                    for (let pixelY = 0; pixelY < tile.length; ++pixelY)
+                    {
+                        const tileRow: number[] = tile[pixelY];
+                        for (let pixelX = 0; pixelX < tileRow.length; ++pixelX)
+                        {
+                            indexedPng.setPixelIndex(
+                                spriteOffsetX + tileOffsetX + pixelX,
+                                spriteOffsetY + tileOffsetY + pixelY,
+                                getColorIndex(tileRow, pixelX, sprite['Flip Graphics Horizontally']));
+                        }
+                    }
+
+                    tileIndex++;
+                }
+            }
+        }
+
+        api.writeReference(spriteGroup['PNG File Path'], await indexedPng.toBuffer());
+    }
+}
+
+function calculateTileOffsets(tileIndex: number, tilesWide: number, flipHorizontally: boolean): [number, number]
+{
+    const tileOffsetX = flipHorizontally
+        ? (tilesWide - (tileIndex % tilesWide) - 1) * pixelsPerRow
+        : (tileIndex % tilesWide) * pixelsPerRow;
+
+    const tileOffsetY = Math.floor(tileIndex / tilesWide) * rowsPerTile;
+
+    return [tileOffsetX, tileOffsetY];
+}
+
+function getColorIndex(tileRow: number[], pixelX: number, flipHorizontally: boolean): number
+{
+    return flipHorizontally
+        ? tileRow[tileRow.length - pixelX - 1]
+        : tileRow[pixelX];
+}
+
+async function* extractTiles(api: PluginApi, sprite: Sprite): AsyncGenerator<number[][]>
+{
+    const buffer: Buffer = await api.getSourceBin(sprite['Binary File Path']);
+    let currentTile: number[][] = createNewTile();
+
+    for (let byteIndex = 0; byteIndex < buffer.length; byteIndex++)
+    {
+        const byte = buffer.readUint8(byteIndex);
+
+        // For each byte, the row encoded follows the pattern
+        // 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7,
+        // 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7
+        const rowIndex = Math.floor(byteIndex / 2) % rowsPerTile; 
+        const row: number[] = currentTile[rowIndex];
+
+        // For each byte, the bit encoded follows the pattern
+        // 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+        // 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3
+        const bitIndex = ((Math.floor(byteIndex / 16) * 2) % bitsPerPixel) + (byteIndex % 2);
+
+        for (let pixelIndex = 0; pixelIndex < pixelsPerRow; ++pixelIndex)
+        {
+            const sourceBitMask = 0b1000_0000 >>> pixelIndex;
+
+            // Isolate the source bit value for this pixel from the current byte
+            // and shift it into the ones place.
+            const bitValue = (byte & sourceBitMask) / sourceBitMask;
+
+            // Shift the isolated bit value into the destination position and 
+            // combine it with the value accumulated for that pixel so far.
+            row[pixelIndex] = row[pixelIndex] | (bitValue << bitIndex);
+        }
+
+        if ((byteIndex + 1) % bytesPerTile === 0)
+        {
+            yield currentTile;
+            currentTile = createNewTile();
+        }
+    }
+}
+
+function createNewTile(): number[][]
+{
+    const tile =
+    [
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ];
+
+    return tile;
 }

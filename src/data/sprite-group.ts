@@ -4,23 +4,25 @@ import { isNullish, isNullishOrEmpty } from '../utility';
 type BaseSpriteGroup =
 {
     'Label': string;
-    'Binary Bank Path'?: string;
-    'Binary Label'?: string;
-    'PNG File Path'?: string;
-    'Original Palette'?: number;
+    'Binary Bank Path': string;
+    'Binary Label': string;
+    'PNG File Path': string;
+    'Original Palette': number;
 
-    'East/West Collision Height'?: number;
-    'East/West Collision Width'?: number;
-    'Length'?: number;
-    'North/South Collision Height'?: number;
-    'North/South Collision Width'?: number;
-    'Size'?: string;
+    'East/West Collision Height': number;
+    'East/West Collision Width': number;
+    'Length': number;
+    'North/South Collision Height': number;
+    'North/South Collision Width': number;
+    'Size': string;
 
-    'Offset 12 to 15'?: number;
-    'Offset 16 to 23'?: number;
-    'Offset 24 to 27'?: number;
-    'Offset 31'?: number;
-}
+    'Tiles Wide': number;
+    'Tiles High': number;
+    'Offset 12 to 15': number;
+    'Offset 16 to 23': number;
+    'Offset 24 to 27': number;
+    'Offset 31': number;
+};
 
 function getMissingSpriteGroupPropertyErrorMessage(propertyName: SpriteGroup.Key)
 {
@@ -30,12 +32,12 @@ function getMissingSpriteGroupPropertyErrorMessage(propertyName: SpriteGroup.Key
 export type SpriteGroup = BaseSpriteGroup &
 {
     'Sprites'?: Sprite[];
-}
+};
 
 export namespace SpriteGroup
 {
     export type Key = keyof SpriteGroup;
-    export const displayOrder: Key[] =
+    export const keyDisplayOrder: Key[] =
     [
         'Label',
         'Binary Bank Path',
@@ -58,7 +60,7 @@ export namespace SpriteGroup
         'Offset 31'
     ];
 
-    export function validate(value: IncompleteSpriteGroup | Partial<SpriteGroup>): string | undefined
+    export function validateForExtract(value: IncompleteSpriteGroup | Partial<SpriteGroup>): string | undefined
     {
         const errorMessage = IncompleteSpriteGroup.validate(value);
         if (errorMessage !== undefined)
@@ -68,7 +70,7 @@ export namespace SpriteGroup
 
         for (const sprite of value['Sprites'] ?? [])
         {
-            const spriteErrorMessage: string | undefined = Sprite.validate(sprite);
+            const spriteErrorMessage: string | undefined = Sprite.validateForExtract(sprite);
             if (spriteErrorMessage !== undefined)
             {
                 return spriteErrorMessage;
@@ -82,7 +84,7 @@ export namespace SpriteGroup
 export type IncompleteSpriteGroup = BaseSpriteGroup &
 {
     'Sprites'?: IncompleteSprite[];
-}
+};
 
 export namespace IncompleteSpriteGroup
 {
@@ -113,9 +115,14 @@ export namespace IncompleteSpriteGroup
             return getMissingSpriteGroupPropertyErrorMessage('PNG File Path');
         }
 
-        if (isNullishOrEmpty(value?.['Size']))
+        if (isNullish(value?.['Tiles Wide']))
         {
-            return getMissingSpriteGroupPropertyErrorMessage('Size');
+            return getMissingSpriteGroupPropertyErrorMessage('Tiles Wide');
+        }
+
+        if (isNullish(value?.['Tiles High']))
+        {
+            return getMissingSpriteGroupPropertyErrorMessage('Tiles High');
         }
 
         if (isNullish(value?.['Original Palette']))

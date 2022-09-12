@@ -3,8 +3,9 @@ import { isNullish, isNullishOrEmpty } from '../utility';
 type BaseSprite =
 {
     'Binary Label': string;
+    'Swim Flag': boolean;
+
     'Flip Graphics Horizontally': boolean;
-    'Float When On Water': boolean;
 }
 
 function getMissingSpritePropertyErrorMessage(propertyName: Sprite.Key)
@@ -19,9 +20,9 @@ export type Sprite = BaseSprite &
 
 export namespace Sprite
 {
-    export function validate(value: Partial<Sprite>): string | undefined
+    export function validateForExtract(value: Partial<Sprite>): string | undefined
     {
-        const errorMessage = IncompleteSprite.validate(value);
+        const errorMessage = IncompleteSprite.validateForExtract(value);
         if (errorMessage) {
             return errorMessage;
         }
@@ -35,12 +36,12 @@ export namespace Sprite
     }
 
     export type Key = keyof Sprite;
-    export const displayOrder: Key[] =
+    export const keyDisplayOrder: Key[] =
     [
         'Binary File Path',
         'Binary Label',
         'Flip Graphics Horizontally',
-        'Float When On Water'
+        'Swim Flag'
     ];
 }
 
@@ -52,7 +53,7 @@ export type IncompleteSprite = BaseSprite &
 
 export namespace IncompleteSprite
 {
-    export function validate(value: Partial<Sprite>): string | undefined
+    export function validateForExtract(value: Partial<Sprite>): string | undefined
     {
         if (isNullishOrEmpty(value?.['Binary Label']))
         {
@@ -64,9 +65,9 @@ export namespace IncompleteSprite
             return getMissingSpritePropertyErrorMessage('Flip Graphics Horizontally');
         }
 
-        if (isNullish(value?.['Float When On Water']))
+        if (isNullish(value?.['Swim Flag']))
         {
-            return getMissingSpritePropertyErrorMessage('Float When On Water');
+            return getMissingSpritePropertyErrorMessage('Swim Flag');
         }
 
         return undefined;

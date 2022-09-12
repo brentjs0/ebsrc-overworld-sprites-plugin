@@ -1,17 +1,21 @@
-export type SpriteGroupPalette =
-{
-    number: number;
-    binaryFilePath: string;
-    pngFilePath: string;
-}
+import { Color15 } from "./color";
 
-export namespace SpriteGroupPalette 
+type BaseSpriteGroupPalette =
+{
+    'Binary File Path': string;
+};
+
+export type SpriteGroupPalette = BaseSpriteGroupPalette &
+{
+    'Palette': Color15[];
+};
+
+export namespace SpriteGroupPalette
 {
     export type Key = keyof SpriteGroupPalette;
-    export const displayOrder: Key[] =
-    [
-        'number',
-        'binaryFilePath',
-        'pngFilePath'
-    ];
 }
+
+export type IncompleteSpriteGroupPalette = BaseSpriteGroupPalette &
+{
+    'Palette'?: Color15[];
+};
