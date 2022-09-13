@@ -4,7 +4,6 @@ import { isNullish, isNullishOrEmpty } from '../utility';
 type BaseSpriteGroup =
 {
     'Label': string;
-    'Binary Bank Path': string;
     'Binary Label': string;
     'PNG File Path': string;
     'Original Palette': number;
@@ -31,6 +30,7 @@ function getMissingSpriteGroupPropertyErrorMessage(propertyName: SpriteGroup.Key
 
 export type SpriteGroup = BaseSpriteGroup &
 {
+    'Binary Bank Path': string;
     'Sprites'?: Sprite[];
 };
 
@@ -62,13 +62,23 @@ export namespace SpriteGroup
 
     export function validateForExtract(value: IncompleteSpriteGroup | Partial<SpriteGroup>): string | undefined
     {
-        const errorMessage = IncompleteSpriteGroup.validate(value);
+        const errorMessage = IncompleteSpriteGroup.validateForExtract(value);
         if (errorMessage !== undefined)
         {
             return errorMessage;
         }
+        
+        if (value['Sprites'] === undefined || value['Sprites'].length === 0)
+        {
+            return undefined;
+        }
 
-        for (const sprite of value['Sprites'] ?? [])
+        if (isNullishOrEmpty(value?.['Binary Bank Path']))
+        {
+            return getMissingSpriteGroupPropertyErrorMessage('Binary Bank Path');
+        }
+
+        for (const sprite of value['Sprites'])
         {
             const spriteErrorMessage: string | undefined = Sprite.validateForExtract(sprite);
             if (spriteErrorMessage !== undefined)
@@ -83,12 +93,13 @@ export namespace SpriteGroup
 
 export type IncompleteSpriteGroup = BaseSpriteGroup &
 {
+    'Binary Bank Path'?: string;
     'Sprites'?: IncompleteSprite[];
 };
 
 export namespace IncompleteSpriteGroup
 {
-    export function validate(value: Partial<IncompleteSpriteGroup>): string | undefined
+    export function validateForExtract(value: Partial<IncompleteSpriteGroup>): string | undefined
     {
         if (isNullishOrEmpty(value?.['Label']))
         {
@@ -98,11 +109,6 @@ export namespace IncompleteSpriteGroup
         if (isNullish(value?.['Sprites']))
         {
             return undefined;
-        }
-
-        if (isNullishOrEmpty(value?.['Binary Bank Path']))
-        {
-            return getMissingSpriteGroupPropertyErrorMessage('Binary Bank Path');
         }
 
         if (isNullishOrEmpty(value?.['Binary Label'])) 

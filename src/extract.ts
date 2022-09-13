@@ -18,7 +18,7 @@ import { CA65BlockError } from './ca65-error';
 import { IncompleteSprite, Sprite } from './data/sprite';
 import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
-import { dumpArrayAsYAMLWithNumericKeys, stringEqualsIgnoreCase } from './utility';
+import { dumpArrayAsYAMLWithNumericKeys, stringEqualsIgnoreCase, toTitleCase } from './utility';
 import { Color15 } from './data/color';
 import { IndexedPng } from './indexed-png';
 
@@ -151,8 +151,6 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
         return castToIncompleteSpriteGroup(group, filePaths.spriteGroupingDataASM, lines);
     }
 
-    group['Binary Bank Path'] = filePaths.bank11ASM;
-
     group['Tiles High'] = data[0].numericValue; // Bit offsets 00 to 07.
     group['Tiles Wide'] = data[1].numericValue >>> 4; // Bit offsets 08 to 11.
     group['Size'] = `${group['Tiles Wide'] * 8}x${group['Tiles High'] * 8}`;
@@ -168,7 +166,11 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     group['East/West Collision Height'] = data[7].numericValue;
     group['Binary Label'] = getArgumentListFromPseudoFunctionCall(data[8].sourceExpressionText); // Bit offsets 64 to 71.
 
-    const pngFileName = `${spriteGroupingPointerTableIndex.toString().padStart(4, '0')}_${group['Binary Label']}.png`
+    const significantBinaryLabelPart = group['Binary Label'].startsWith('SPRITE_GROUP_')
+        ? group['Binary Label'].substring(13)
+        : group['Binary Label'];
+
+    const pngFileName = `${spriteGroupingPointerTableIndex.toString().padStart(3, '0')} ${toTitleCase(significantBinaryLabelPart)}.png`
     group['PNG File Path'] = `${filePaths.spriteGroupsDirectory}${pngFileName}`
 
     group['Sprites'] = []; // Bit offsets 72 and greater.
@@ -184,7 +186,7 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
 
 function castToIncompleteSpriteGroup(group: Partial<IncompleteSpriteGroup>, fileName: string, lines: CA65Line[]): IncompleteSpriteGroup
 {
-    const errorMessage: string | undefined = IncompleteSpriteGroup.validate(group);
+    const errorMessage: string | undefined = IncompleteSpriteGroup.validateForExtract(group);
     if (errorMessage !== undefined)
     {
         throw new CA65BlockError(errorMessage, fileName, lines);
@@ -290,11 +292,9 @@ function assertLineContainsInstruction(lines: CA65Line[], line: CA65Line, instru
     }
 }
 
-export async function extractBank11(api: PluginApi, incompleteSpriteGroups: IncompleteSpriteGroup[]): Promise<SpriteGroup[]>
+export async function extractBanks11to15(api: PluginApi, incompleteSpriteGroups: IncompleteSpriteGroup[]): Promise<SpriteGroup[]>
 {
-    const binaryPathsByLabel: { [index: string]: string } = {};
-
-    const bankPaths =
+    const binaryBankPaths =
     [
         filePaths.bank11ASM,
         filePaths.bank12ASM,
@@ -303,9 +303,12 @@ export async function extractBank11(api: PluginApi, incompleteSpriteGroups: Inco
         filePaths.bank15ASM
     ];
 
-    for (const bankPath of bankPaths)
+    for (const binaryBankPath of binaryBankPaths)
     {
-        const bankFileContents: string = await api.getSourceText(bankPath);
+        const labelsInBank: string[] = [];
+        const binaryPathsByLabel: { [index: string]: string } = {};
+
+        const bankFileContents: string = await api.getSourceText(binaryBankPath);
         const lineReader: Generator<CA65Line> = readCA65Lines(bankFileContents);
 
         let lines: CA65Line[] = [];
@@ -320,6 +323,7 @@ export async function extractBank11(api: PluginApi, incompleteSpriteGroups: Inco
 
             if (line.label !== undefined)
             {
+                labelsInBank.push(line.label);
                 labelsForAddress.push(line.label);
             }
 
@@ -329,7 +333,7 @@ export async function extractBank11(api: PluginApi, incompleteSpriteGroups: Inco
                 {
                     throw new CA65BlockError(
                         'A BINARY macro call was found with an invalid file path operand.',
-                        bankPath,
+                        binaryBankPath,
                         lines,
                         line);
                 }
@@ -343,14 +347,23 @@ export async function extractBank11(api: PluginApi, incompleteSpriteGroups: Inco
                 lines = [];
             }
         }
+
+        for (const spriteGroup of incompleteSpriteGroups)
+        {
+            if (labelsInBank.includes(spriteGroup['Binary Label']))
+            {
+                spriteGroup['Binary Bank Path'] = binaryBankPath;
+
+                for (const sprite of spriteGroup['Sprites'] ?? [])
+                {
+                    sprite['Binary File Path'] = binaryPathsByLabel[sprite['Binary Label']];
+                }
+            }
+        }
     }
 
     for (const spriteGroup of incompleteSpriteGroups)
     {
-        for (const sprite of spriteGroup['Sprites'] ?? [])
-        {
-            sprite['Binary File Path'] = binaryPathsByLabel[sprite['Binary Label']];
-        }
         const spriteGroupErrorMessage: string | undefined = SpriteGroup.validateForExtract(spriteGroup);
         if (spriteGroupErrorMessage !== undefined)
         {

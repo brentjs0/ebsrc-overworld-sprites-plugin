@@ -6,7 +6,7 @@ import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-
 import
 {
     extractBank03,
-    extractBank11 as extractBanks11to15,
+    extractBanks11to15,
     extractPaletteBinaries,
     extractSpriteGroupBinaries,
     extractSpriteGroupingData,

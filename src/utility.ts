@@ -69,3 +69,21 @@ export function dumpArrayAsYAMLWithNumericKeys(objects: object[], options: jsYam
   
   return `${nodes.join('\n')}\n`;
 }
+
+export function toTitleCase(str: string): string {
+    return Array.from(str.matchAll(/(?<word>[a-zA-Z0-9]+)(?:[^a-zA-Z0-9]*)?/g))
+        .filter(match => match.groups?.word !== undefined)
+        .map(transformCase)
+        .join(' ');
+}
+
+function transformCase(match: RegExpMatchArray): string
+{
+    const word = match.groups?.word;
+    if (word === undefined)
+    {
+        throw new Error('oops');
+    }
+
+    return substringByLength(word, 0, 1).toUpperCase() + word.substring(1).toLowerCase();
+}
