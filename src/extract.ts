@@ -15,12 +15,19 @@ import
     readCA65Lines,
 } from './ca65';
 import { CA65BlockError } from './ca65-error';
-import { IncompleteSprite, Sprite } from './data/sprite';
-import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
-import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
-import { dumpArrayAsYAMLWithNumericKeys, stringEqualsIgnoreCase, toTitleCase } from './utility';
 import { Color15 } from './data/color';
+import { IncompleteSprite, Sprite } from './data/sprite';
+import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
+import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
 import { IndexedPng } from './indexed-png';
+import
+{
+    dumpArrayAsYAMLWithNumericKeys,
+    isNullishOrEmpty,
+    removePrefix,
+    stringEqualsIgnoreCase,
+    toTitleCase,
+} from './utility';
 
 export async function extractSpriteGroupingPointers(api: PluginApi): Promise<string[]>
 {
@@ -145,6 +152,7 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     validateSpriteGroupingData(lines, data, byteCount);
 
     group['Label'] = lines[0].label;
+    
 
     if (byteCount <= 0)
     {
@@ -166,12 +174,7 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     group['East/West Collision Height'] = data[7].numericValue;
     group['Binary Label'] = getArgumentListFromPseudoFunctionCall(data[8].sourceExpressionText); // Bit offsets 64 to 71.
 
-    const significantBinaryLabelPart = group['Binary Label'].startsWith('SPRITE_GROUP_')
-        ? group['Binary Label'].substring(13)
-        : group['Binary Label'];
-
-    const pngFileName = `${spriteGroupingPointerTableIndex.toString().padStart(3, '0')} ${toTitleCase(significantBinaryLabelPart)}.png`
-    group['PNG File Path'] = `${filePaths.spriteGroupsDirectory}${pngFileName}`
+    group['PNG File Path'] = getPngFilePath(spriteGroupingPointerTableIndex, group['Binary Label'], lines[0].comment);
 
     group['Sprites'] = []; // Bit offsets 72 and greater.
     for (const datum of data.slice(9))
@@ -182,6 +185,26 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     group['Length'] = group['Sprites'].length;
 
     return castToIncompleteSpriteGroup(group, filePaths.spriteGroupingDataASM, lines);
+}
+
+function getPngFilePath(spriteGroupingPointerTableIndex: number, binaryLabel: string, spriteGroupingLabelComment: string | undefined)
+{
+    let pngFileName = spriteGroupingPointerTableIndex.toString().padStart(3, '0');
+    if (!isNullishOrEmpty(binaryLabel))
+    {
+        const labelSegment = removePrefix(binaryLabel, 'SPRITE_GROUP_');
+        if (labelSegment.length > 0)
+        {
+            pngFileName += ` ${toTitleCase(labelSegment)}`;
+        }
+    }
+
+    if (!isNullishOrEmpty(spriteGroupingLabelComment))
+    {
+        pngFileName += ` (${toTitleCase(spriteGroupingLabelComment)})`;
+    }
+
+    return `${filePaths.spriteGroupsDirectory}${pngFileName}.png`
 }
 
 function castToIncompleteSpriteGroup(group: Partial<IncompleteSpriteGroup>, fileName: string, lines: CA65Line[]): IncompleteSpriteGroup

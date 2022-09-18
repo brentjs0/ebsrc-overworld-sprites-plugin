@@ -1,4 +1,6 @@
 import * as jsYaml from 'js-yaml';
+import upperFirst from 'lodash/upperFirst';
+import words from 'lodash/words';
 
 export function stringEqualsIgnoreCase(string1: string, string2: string): boolean
 {
@@ -70,20 +72,89 @@ export function dumpArrayAsYAMLWithNumericKeys(objects: object[], options: jsYam
   return `${nodes.join('\n')}\n`;
 }
 
-export function toTitleCase(str: string): string {
-    return Array.from(str.matchAll(/(?<word>[a-zA-Z0-9]+)(?:[^a-zA-Z0-9]*)?/g))
-        .filter(match => match.groups?.word !== undefined)
-        .map(transformCase)
+export function toTitleCase(str: string): string 
+{
+    const wordStrings = words(str);
+    const lastIndex = wordStrings.length - 1;
+
+    return wordStrings
+        .map((w, i) => applyTitleCaseToWord(w, i === 0 || i === lastIndex))
         .join(' ');
 }
 
-function transformCase(match: RegExpMatchArray): string
+function applyTitleCaseToWord(word: string, isFirstOrLastWord: boolean): string
 {
-    const word = match.groups?.word;
-    if (word === undefined)
+    const lowercaseWord = word.toLowerCase();
+    switch (lowercaseWord)
     {
-        throw new Error('oops');
+        case 'atm':
+            return 'ATM';
+        case 'amid':
+        case 'and':
+        case 'as':
+        case 'at':
+        case 'but':
+        case 'by':
+        case 'down':
+        case 'for':
+        case 'from':
+        case 'in':
+        case 'into':
+        case 'like':
+        case 'near':
+        case 'next':
+        case 'nor':
+        case 'of':
+        case 'off':
+        case 'on':
+        case 'onto':
+        case 'or':
+        case 'out':
+        case 'over':
+        case 'past':
+        case 'per':
+        case 'plus':
+        case 'save':
+        case 'so':
+        case 'than':
+        case 'till':
+        case 'to':
+        case 'up':
+        case 'upon':
+        case 'via':
+        case 'with':
+        case 'yet':
+            return isFirstOrLastWord ? upperFirst(lowercaseWord) : lowercaseWord;
+        default:
+            return upperFirst(lowercaseWord);
+    }
+}
+
+export function removePrefix(str: string, prefix: string)
+{
+    if (str.startsWith(prefix))
+    {
+        return str.substring(prefix.length);
     }
 
-    return substringByLength(word, 0, 1).toUpperCase() + word.substring(1).toLowerCase();
+    return str;
+}
+
+export function splitWhere(str: string, splitCondition: (characterIndex: number) => boolean): string[]
+{
+    const substrings = [];
+    let substringStart = 0;
+
+    for (let i = 0; i < str.length; ++i)
+    {
+        if (splitCondition(i))
+        {
+            substrings.push(str.substring(substringStart, i));
+            substringStart = i;
+        }
+    }
+
+    substrings.push(str.substring(substringStart, str.length));
+
+    return substrings;
 }

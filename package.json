@@ -12,11 +12,13 @@
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
     "@types/js-yaml": "^4.0.5",
+    "@types/lodash": "^4.14.185",
     "@types/node": "^18.7.3"
   },
   "dependencies": {
     "fs-extra": "^10.1.0",
     "indexed-png": "^0.0.6",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21"
   }
 }
