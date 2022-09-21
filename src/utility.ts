@@ -89,6 +89,8 @@ function applyTitleCaseToWord(word: string, isFirstOrLastWord: boolean): string
     {
         case 'atm':
             return 'ATM';
+        case 'ii':
+            return 'II';
         case 'amid':
         case 'and':
         case 'as':
