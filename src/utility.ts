@@ -4,7 +4,7 @@ import words from 'lodash/words';
 
 export function stringEqualsIgnoreCase(string1: string, string2: string): boolean
 {
-    return string1.localeCompare(string2, 'en', { sensitivity: 'base' }) == 0
+    return string1.toUpperCase() === string2.toUpperCase();
 }
 
 export function isString(value: any): value is string

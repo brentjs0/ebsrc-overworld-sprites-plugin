@@ -3,12 +3,13 @@ export type Color15 =
     red: Color15.Component
     green: Color15.Component;
     blue: Color15.Component;
+    isTransparent: boolean;
     toColor24: () => Color24;
 };
 
 export namespace Color15
 {
-    export function create(red: number, green: number, blue: number): Color15
+    export function create(red: number, green: number, blue: number, isTransparent: boolean = false): Color15
     {
         checkComponentArgument('red', red);
         checkComponentArgument('green', green);
@@ -19,6 +20,7 @@ export namespace Color15
             red: red,
             green: green,
             blue: blue,
+            isTransparent: isTransparent,
             toColor24: toColor24
         }
 

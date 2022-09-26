@@ -5,17 +5,30 @@
   "description": "A plugin for extracting and re-inserting sprite group images from an ebsrc project in PNG format.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc & cpx \"src/test-assets/**\" \"dest/test-assets\"",
+    "test": "mocha dest/**/**.test.js",
+    "watch": "nodemon --ext ts,png --watch src --exec \"npm run build && npm run test\""
   },
   "author": "brentjs0",
   "license": "BSL-1.0",
   "devDependencies": {
+    "@types/chai": "^4.3.3",
     "@types/fs-extra": "^9.0.13",
+    "@types/get-pixels": "^3.3.2",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.185",
-    "@types/node": "^18.7.3"
+    "@types/mocha": "^9.1.1",
+    "@types/ndarray": "^1.0.11",
+    "@types/node": "^18.7.3",
+    "chai": "^4.3.6",
+    "cpx2": "^4.2.0",
+    "get-pixels": "^3.3.3",
+    "mocha": "^10.0.0",
+    "nodemon": "^2.0.20",
+    "rimraf": "^3.0.2"
   },
   "dependencies": {
+    "@camoto/pngjs": "^6.1.0",
     "fs-extra": "^10.1.0",
     "indexed-png": "^0.0.6",
     "js-yaml": "^4.1.0",

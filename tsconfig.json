@@ -4,16 +4,14 @@
       "esModuleInterop": true,
       "lib": ["es2020"],
       "module": "commonjs",
-  
       "noFallthroughCasesInSwitch": true,
       "noImplicitReturns": true,
-  
-      "rootDir": "src",
       "outDir": "dest",
+      "rootDir": "src",
       "sourceMap": true,
       "strict": true,
-      "target": "es2020"
+      "target": "es2020",
+      "typeRoots": ["./node_modules/@types", "./src/types"]
     },
-    "exclude": ["node_modules", "notes"]
-  }
-  
+    "exclude": ["node_modules", "notes"],
+}

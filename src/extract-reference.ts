@@ -19,7 +19,7 @@ import { Color15 } from './data/color';
 import { IncompleteSprite, Sprite } from './data/sprite';
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
 import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
-import { IndexedPng } from './indexed-png';
+import { Png15 } from './png15';
 import
 {
     dumpArrayAsYAMLWithNumericKeys,
@@ -492,9 +492,9 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
 
     let pngPaletteIndex = 0;
 
-    const indexedPng: IndexedPng = IndexedPng.create(pngWidth, pngHeight);
-    indexedPng.setPaletteColor(lastPaletteIndex, Color15.create(15, 15, 15));
-    indexedPng.fillWithIndex(lastPaletteIndex);
+    const png15: Png15 = Png15.create(pngWidth, pngHeight);
+    png15.palette[lastPaletteIndex] = Color15.create(15, 15, 15, true);
+    png15.fill(lastPaletteIndex);
 
     for (let paletteNumber = 0; paletteNumber < incompletePalettes.length; ++paletteNumber)
     {
@@ -513,18 +513,18 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
             const green5 = (word & 0b0000_0011_1110_0000) >>> 5;
             const red5 = word & 0b0000_0000_0001_1111;
 
-            const color15 = Color15.create(red5, green5, blue5);
+            const color15 = Color15.create(red5, green5, blue5, bufferOffset === 0);
             spriteGroupPalette.Palette.push(color15);
 
-            indexedPng.setPaletteColor(pngPaletteIndex, color15);
-            indexedPng.setPixelIndex(x, y, pngPaletteIndex);
+            png15.palette[pngPaletteIndex] = Color15.create(red5, green5, blue5);
+            png15.setPixelValue(x, y, pngPaletteIndex);
 
             pngPaletteIndex++;
             x++;
         }
     }
 
-    api.writeReference(filePaths.spriteGroupPalettesPNG, await indexedPng.toBuffer());
+    api.writeReference(filePaths.spriteGroupPalettesPNG, await png15.toBuffer());
     api.writeReference(filePaths.spriteGroupPalettesYML, dumpArrayAsYAMLWithNumericKeys(incompletePalettes, { replacer: replaceSpriteGroupPaletteValues }));
 
     return incompletePalettes as SpriteGroupPalette[];
@@ -560,8 +560,8 @@ export async function extractSpriteGroupBinaries(api: PluginApi, spriteGroups: S
         const spriteRowCount = Math.ceil(spriteGroup['Length'] / spritesPerRow);
 
         const palette: Color15[] = spriteGroupPalettes[spriteGroup['Original Palette']]['Palette'];
-        const indexedPng = IndexedPng.create(spriteWidth * spritesPerRow, spriteHeight * spriteRowCount, palette);
-        indexedPng.fillWithIndex(0);
+        const indexedPng = Png15.create(spriteWidth * spritesPerRow, spriteHeight * spriteRowCount, palette);
+        indexedPng.fill(0);
 
         let spriteOffsetX = 0;
         let spriteOffsetY = 0;
@@ -591,7 +591,7 @@ export async function extractSpriteGroupBinaries(api: PluginApi, spriteGroups: S
                         const tileRow: number[] = tile[pixelY];
                         for (let pixelX = 0; pixelX < tileRow.length; ++pixelX)
                         {
-                            indexedPng.setPixelIndex(
+                            indexedPng.setPixelValue(
                                 spriteOffsetX + tileOffsetX + pixelX,
                                 spriteOffsetY + tileOffsetY + pixelY,
                                 getColorIndex(tileRow, pixelX, sprite['Flip Graphics Horizontally']));

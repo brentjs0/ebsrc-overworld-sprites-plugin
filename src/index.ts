@@ -1,5 +1,8 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { PNG } from '@camoto/pngjs';
+
+import { getPngPalette } from './apply-mod';
 
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
 import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
@@ -11,7 +14,7 @@ import
     extractSpriteGroupBinaries,
     extractSpriteGroupingData,
     extractSpriteGroupingPointers,
-} from './extract';
+} from './extract-reference';
 
 const joinPath = path.join;
 
@@ -31,14 +34,22 @@ export const filePaths =
     spriteGroupsDirectory: 'SpriteGroups/'
 } as const;
 
-const writtenPaths: string[] = [];
-
 const api: PluginApi =
 {
+    path: 'C:/Users/brent/source/repos/ebsrc-project/mod',
     project:
     {
         ebsrcPath: 'C:/Users/brent/source/repos/ebsrc-project/ebsrc',
         referencePath: 'C:/Users/brent/source/repos/ebsrc-project/reference',
+        ebdestPath: 'C:/Users/brent/source/repos/ebsrc-project/ebdest'
+    },
+    async getModBin(path: string): Promise<Buffer>
+    {
+        return await fs.readFile(joinPath(this.path, path));
+    },
+    async getModText(path: string): Promise<string>
+    {
+        return await fs.readFile(joinPath(this.path, path), 'utf8');
     },
     async getSourceBin(path: string): Promise<Buffer>
     {
@@ -48,12 +59,13 @@ const api: PluginApi =
     {
         return await fs.readFile(joinPath(this.project.ebsrcPath, path), 'utf8');
     },
+    async writeDest(path: string, contents: any): Promise<void>
+    {
+        return await fs.outputFile(joinPath(this.project.ebdestPath, path), contents);
+    },
     async writeReference(path: string, contents: any): Promise<void>
     {
-        const fullPath = joinPath(this.project.referencePath, path);
-        writtenPaths.push(fullPath);
-
-        return await fs.outputFile(fullPath, contents);
+        return await fs.outputFile(joinPath(this.project.referencePath, path), contents);
     }
 }
 
@@ -69,23 +81,36 @@ async function extractReference(api: PluginApi)
     await extractSpriteGroupBinaries(api, spriteGroups, spriteGroupPalettes);
 }
 
+async function applyMod(api: PluginApi)
+{
+    // await getPngPalette(PNG.sync.read(await api.getModBin('test-reference.png')));
+    // await getPngPalette(PNG.sync.read(await api.getModBin('test-mspaint.png')));
+    // await getPngPalette(PNG.sync.read(await api.getModBin('test-coilsnake.png')));
+}
+
 export type PluginApi =
 {
+    path: string;
     project:
     {
         ebsrcPath: string;
         referencePath: string;
+        ebdestPath: string;
     };
+    getModBin(path: string): Promise<Buffer>;
+    getModText(path: string): Promise<string>;
     getSourceBin(path: string): Promise<Buffer>;
     getSourceText(path: string): Promise<string>;
+    writeDest(path: string, contents: any): Promise<void>;
     writeReference(path: string, contents: any): Promise<void>;
 };
 
 extractReference(api);
+//applyMod(api);
 
 module.exports =
 {
-    name: 'EbsrcOverworldSpritesPlugin',
-    applyMod: async function (api: any) { },
+    name: 'EbsrcSpriteGroupsPlugin',
+    applyMod: applyMod,
     extractReference: extractReference,
 };
