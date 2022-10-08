@@ -160,3 +160,18 @@ export function splitWhere(str: string, splitCondition: (characterIndex: number)
 
     return substrings;
 }
+
+export function unpackErrorMessage(caughtValue: any, fallbackErrorMessage: string) : string
+{
+    if (caughtValue instanceof Error)
+    {
+        return caughtValue.message;
+    }
+
+    if (typeof caughtValue === 'string')
+    {
+        return caughtValue;
+    }
+
+    return fallbackErrorMessage;
+}

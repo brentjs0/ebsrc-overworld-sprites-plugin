@@ -1,4 +1,4 @@
-import { Color15 } from "./color";
+import { SnesColor } from './snes-color';
 
 type BaseSpriteGroupPalette =
 {
@@ -7,7 +7,7 @@ type BaseSpriteGroupPalette =
 
 export type SpriteGroupPalette = BaseSpriteGroupPalette &
 {
-    'Palette': Color15[];
+    'Palette': SnesColor[];
 };
 
 export namespace SpriteGroupPalette
@@ -17,5 +17,5 @@ export namespace SpriteGroupPalette
 
 export type IncompleteSpriteGroupPalette = BaseSpriteGroupPalette &
 {
-    'Palette'?: Color15[];
+    'Palette'?: SnesColor[];
 };

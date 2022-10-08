@@ -2,13 +2,13 @@ import { IndexedPNG } from 'indexed-png';
 import findLastIndex from 'lodash/findLastIndex';
 import isEqual from 'lodash/isEqual';
 
-import { Color15 } from './data/color';
+import { SnesColor } from './data/snes-color';
 
 const pixelValuesSymbol: unique symbol = Symbol('pixelValues');
 const widthSymbol: unique symbol = Symbol('width');
 const heightSymbol: unique symbol = Symbol('height');
 
-export type Png15 =
+export type SnesImage =
 {
     [pixelValuesSymbol]: number[];
     getPixelValues: () => number[];
@@ -16,18 +16,18 @@ export type Png15 =
     getWidth: () => number;
     [heightSymbol]: number;
     getHeight: () => number;
-    palette: Color15[];
-    getPaletteColorIndex: (color15: Color15) => number;
+    palette: SnesColor[];
+    getPaletteColorIndex: (snesColor: SnesColor) => number;
     setPixelValue: (x: number, y: number, colorIndexValue: number) => void;
     fill: (colorIndexValue: number) => void;
-    toBuffer: () => Promise<Buffer>;
+    toPngBuffer: () => Promise<Buffer>;
 }
 
-export namespace Png15
+export namespace SnesImage
 {
-    export function create(width: number, height: number, palette: Color15[] | undefined = undefined)
+    export function create(width: number, height: number, palette: SnesColor[] | undefined = undefined)
     {
-        const indexedPng: Png15 = 
+        const indexedPng: SnesImage = 
         {
             [pixelValuesSymbol]: Array(width * height).fill(0),
             getPixelValues: getPixelValues,
@@ -39,32 +39,32 @@ export namespace Png15
             getPaletteColorIndex: getPaletteColorIndex,
             setPixelValue: setPixelValue,
             fill: fill,
-            toBuffer: toBuffer
+            toPngBuffer: toPngBuffer
         };
         
         return indexedPng;
     }
 
-    function getPixelValues(this: Png15): number[]
+    function getPixelValues(this: SnesImage): number[]
     {
         return [...this[pixelValuesSymbol]];
     }
 
-    function getWidth(this: Png15): number
+    function getWidth(this: SnesImage): number
     {
         return this[widthSymbol];
     }
 
-    function getHeight(this: Png15): number
+    function getHeight(this: SnesImage): number
     {
         return this[heightSymbol];
     }
 
-    function getPaletteColorIndex(this: Png15, color15: Color15): number
+    function getPaletteColorIndex(this: SnesImage, snesColor: SnesColor): number
     {
         for (let i = 0 ; i < this.palette.length; ++i)
         {
-            if (isEqual(this.palette[i], color15))
+            if (isEqual(this.palette[i], snesColor))
             {
                 return i;
             }
@@ -73,14 +73,14 @@ export namespace Png15
         return -1;
     }
 
-    function setPixelValue(this: Png15, x: number, y: number, colorIndexValue: number)
+    function setPixelValue(this: SnesImage, x: number, y: number, colorIndexValue: number)
     {
         checkPixelCoordinateArguments(this, x, y);
         const dataIndex = getPixelValueIndex(this, x, y);
         this[pixelValuesSymbol][dataIndex] = colorIndexValue;
     }
 
-    function checkPixelCoordinateArguments(indexedPng: Png15, x: number, y: number)
+    function checkPixelCoordinateArguments(indexedPng: SnesImage, x: number, y: number)
     {
         assertArgumentIsInteger('x', x);
         if (x >= indexedPng[widthSymbol])
@@ -103,17 +103,17 @@ export namespace Png15
         }
     }
 
-    function getPixelValueIndex(png15: Png15, x: number, y: number)
+    function getPixelValueIndex(snesImage: SnesImage, x: number, y: number)
     {
-        return (png15[widthSymbol] * y) + x;
+        return (snesImage[widthSymbol] * y) + x;
     }
 
-    function fill(this: Png15, colorIndex: number)
+    function fill(this: SnesImage, colorIndex: number)
     {
         this[pixelValuesSymbol].fill(colorIndex);
     }
 
-    async function toBuffer(this: Png15): Promise<Buffer>
+    async function toPngBuffer(this: SnesImage): Promise<Buffer>
     {
         const bitDepth: IndexedBitDepth = calculateMinimumPossibleBitDepth(this.palette.length);
 
@@ -154,15 +154,15 @@ export namespace Png15
 
     // indexed-png's createPLTE() function assumes palettes are 256 colors, so we need to
     // use our own method to have shorter palettes.
-    function createPLTE(color15Palette: Color15[]): Buffer
+    function createPLTE(snesColorPalette: SnesColor[]): Buffer
     {
-        const plteBuffer = Buffer.alloc(color15Palette.length * 3);
-        for (let i = 0; i < color15Palette.length; i++)
+        const plteBuffer = Buffer.alloc(snesColorPalette.length * 3);
+        for (let i = 0; i < snesColorPalette.length; i++)
         {
-            const color24 = color15Palette[i].toColor24();
-            plteBuffer[i * 3 + 0] = color24.red;
-            plteBuffer[i * 3 + 1] = color24.green;
-            plteBuffer[i * 3 + 2] = color24.blue;
+            const rgbaColor = snesColorPalette[i].toRgbaColor();
+            plteBuffer[i * 3 + 0] = rgbaColor.red;
+            plteBuffer[i * 3 + 1] = rgbaColor.green;
+            plteBuffer[i * 3 + 2] = rgbaColor.blue;
         }
 
         return plteBuffer;
@@ -186,19 +186,19 @@ export namespace Png15
         throw new Error(`A palette must not exceed ${maxPaletteLengthForBitDepth} colors`);
     }
 
-    function convertValuesToBuffer(png15: Png15, bitDepth: IndexedBitDepth, bytesPerLine: number): Buffer
+    function convertValuesToBuffer(snesImage: SnesImage, bitDepth: IndexedBitDepth, bytesPerLine: number): Buffer
     {
-        const pixelValues: number[] = png15.getPixelValues();
+        const pixelValues: number[] = snesImage.getPixelValues();
         const pixelValuesPerByte = 8 / bitDepth;
 
-        const byteCount: number = bytesPerLine * png15.getHeight();
+        const byteCount: number = bytesPerLine * snesImage.getHeight();
         const buffer: Buffer = Buffer.alloc(byteCount);
 
         let currentBufferOffset = 0;
-        for (let lineY = 0; lineY < png15.getHeight(); ++lineY)
+        for (let lineY = 0; lineY < snesImage.getHeight(); ++lineY)
         {
             currentBufferOffset = bufferLine(
-                png15,
+                snesImage,
                 pixelValues,
                 bitDepth,
                 pixelValuesPerByte,
@@ -211,7 +211,7 @@ export namespace Png15
     }
 
     function bufferLine(
-        png15: Png15,
+        snesImage: SnesImage,
         pixelValues: number[],
         bitDepth: IndexedBitDepth,
         pixelValuesPerByte: number,
@@ -219,8 +219,8 @@ export namespace Png15
         currentBufferOffset: number,
         lineY: number): number
     {
-        const startIndex: number = getPixelValueIndex(png15, 0, lineY);
-        const endIndex = startIndex + png15.getWidth();
+        const startIndex: number = getPixelValueIndex(snesImage, 0, lineY);
+        const endIndex = startIndex + snesImage.getWidth();
         
         let byte = 0b0000_0000;
         let pixelValuesAddedToByte = 0;

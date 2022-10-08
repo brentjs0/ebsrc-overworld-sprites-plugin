@@ -1,5 +1,4 @@
-// This file is a based on @types/pngjs (https://www.npmjs.com/package/@types/pngjs).
-
+// This is a based on @types/pngjs (https://www.npmjs.com/package/@types/pngjs).
 declare module '@camoto/pngjs'
 {
     import { Duplex } from 'stream';
@@ -111,4 +110,17 @@ declare module '@camoto/pngjs'
         palette: boolean;
         width: number;
     }
+}
+
+declare type PngChunk =
+{
+    name: string;
+    data: Uint8Array;
+}
+
+declare module 'png-chunks-extract'
+{
+    function extractChunks(data: Uint8Array | Buffer): PngChunk[];
+    
+    export = extractChunks;
 }

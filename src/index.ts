@@ -1,9 +1,5 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { PNG } from '@camoto/pngjs';
-
-import { getPngPalette } from './apply-mod';
-
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
 import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
 import
@@ -18,19 +14,21 @@ import
 
 const joinPath = path.join;
 
+export const referenceYmlHeader = '# File Format: ebsrc-sprite-groups-plugin v1.0.0';
+
 export const filePaths =
 {
-    spriteGroupingPointersASM: 'src/data/sprite_grouping_pointers.asm',
-    spriteGroupingDataASM: 'src/data/sprite_grouping_data.asm',
-    bank11ASM: 'src/bankconfig/US/bank11.asm',
-    bank12ASM: 'src/bankconfig/US/bank12.asm',
-    bank13ASM: 'src/bankconfig/US/bank13.asm',
-    bank14ASM: 'src/bankconfig/US/bank14.asm',
-    bank15ASM: 'src/bankconfig/US/bank15.asm',
-    bank03ASM: 'src/bankconfig/US/bank03.asm',
-    spriteGroupsYML: 'sprite_groups.yml',
-    spriteGroupPalettesYML: 'sprite_group_palettes.yml',
-    spriteGroupPalettesPNG: 'sprite_group_palettes.png',
+    spriteGroupingPointersAsm: 'src/data/sprite_grouping_pointers.asm',
+    spriteGroupingDataAsm: 'src/data/sprite_grouping_data.asm',
+    bank11Asm: 'src/bankconfig/US/bank11.asm',
+    bank12Asm: 'src/bankconfig/US/bank12.asm',
+    bank13Asm: 'src/bankconfig/US/bank13.asm',
+    bank14Asm: 'src/bankconfig/US/bank14.asm',
+    bank15Asm: 'src/bankconfig/US/bank15.asm',
+    bank03Asm: 'src/bankconfig/US/bank03.asm',
+    spriteGroupsYml: 'sprite_groups.yml',
+    spriteGroupPalettesYml: 'sprite_group_palettes.yml',
+    spriteGroupPalettesPng: 'sprite_group_palettes.png',
     spriteGroupsDirectory: 'SpriteGroups/'
 } as const;
 
