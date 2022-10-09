@@ -13,5 +13,5 @@
       "target": "es2020",
       "typeRoots": ["./node_modules/@types", "./src/types"]
     },
-    "exclude": ["node_modules", "notes"],
+    "exclude": ["node_modules", "notes"]
 }

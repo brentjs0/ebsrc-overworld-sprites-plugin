@@ -10,6 +10,7 @@ import
     getArgumentListFromPseudoFunctionCall,
     getTextFromCA65StringLiteral,
     isCA65StringLiteral,
+    lineHasOperandList,
     parseCA65Number,
     readCA65LineData,
     readCA65Lines,
@@ -23,6 +24,7 @@ import { SnesImage } from './snes-image';
 import
 {
     dumpArrayAsYAMLWithNumericKeys,
+    filterToType,
     isNullishOrEmpty,
     removePrefix,
     stringEqualsIgnoreCase,
@@ -34,7 +36,7 @@ export async function extractSpriteGroupingPointers(api: PluginApi): Promise<str
 {
     const spriteGroupingPointersFileContents: string = await api.getSourceText(filePaths.spriteGroupingPointersAsm);
 
-    let lineReader: Generator<CA65Line> = readCA65Lines(spriteGroupingPointersFileContents, 'SPRITE_GROUPING_PTR_TABLE');
+    const lineReader: Generator<CA65Line> = readCA65Lines(spriteGroupingPointersFileContents, 'SPRITE_GROUPING_PTR_TABLE');
     if (lineReader.next()?.done !== false)
     {
         throw new Error(`SPRITE_GROUPING_PTR_TABLE could not be found in the source file ${filePaths.spriteGroupingPointersAsm}.`);
@@ -50,10 +52,10 @@ export async function extractSpriteGroupingPointers(api: PluginApi): Promise<str
                 spriteGroupingDataLabels.push(line.operandList);
             }
         }
-        catch (error: any)
+        catch (error: unknown)
         {
             throw new CA65LineError(
-                unpackErrorMessage(error, `An error occured while parsing sprite group pointers.`),
+                unpackErrorMessage(error, 'An error occured while parsing sprite group pointers.'),
                 filePaths.spriteGroupingPointersAsm,
                 line);
         }
@@ -66,7 +68,7 @@ export async function extractSpriteGroupingData(api: PluginApi, spriteGroupingDa
 {
     const spriteGroupingDataFileContents: string = await api.getSourceText(filePaths.spriteGroupingDataAsm);
 
-    let lineReader: Generator<CA65Line> = readCA65Lines(spriteGroupingDataFileContents, 'SPRITE_GROUPING_DATA');
+    const lineReader: Generator<CA65Line> = readCA65Lines(spriteGroupingDataFileContents, 'SPRITE_GROUPING_DATA');
     if (lineReader.next()?.done !== false)
     {
         throw new Error(`SPRITE_GROUPING_DATA could not be found in the source file ${filePaths.spriteGroupingDataAsm}.`);
@@ -156,8 +158,7 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
     try
     {
         const group: Partial<IncompleteSpriteGroup> = {};
-
-        const data: CA65Datum[] = lines.flatMap(l => readCA65LineData(l));
+        const data: CA65Datum[] = filterToType(lines, lineHasOperandList).flatMap(l => readCA65LineData(l));
         const byteCount: number = countCA65DatumBytes(data);
         validateSpriteGroupingData(lines, data, byteCount);
 
@@ -196,7 +197,7 @@ function parseSpriteGroupingData(lines: CA65Line[], spriteGroupingPointerTableIn
 
         return castToIncompleteSpriteGroup(group);
     }
-    catch (error: any)
+    catch (error: unknown)
     {
         const errorLine = error instanceof CA65LineError ? error.line : undefined;
 
@@ -225,7 +226,7 @@ function getPngFilePath(spriteGroupingPointerTableIndex: number, binaryLabel: st
         pngFileName += ` (${toTitleCase(spriteGroupingLabelComment)})`;
     }
 
-    return `${filePaths.spriteGroupsDirectory}${pngFileName}.png`
+    return `${filePaths.spriteGroupsDirectory}${pngFileName}.png`;
 }
 
 function castToIncompleteSpriteGroup(group: Partial<IncompleteSpriteGroup>): IncompleteSpriteGroup
@@ -248,7 +249,7 @@ function parseSpriteData(lines: CA65Line[], spriteDatum: CA65Datum): IncompleteS
             .map(p => p.trim());
 
         let stringValue: string | undefined = undefined;
-        let numericValue: number = 0;
+        let numericValue = 0;
         for (const operandPart of operandParts)
         {
             const number: number = parseCA65Number(operandPart);
@@ -269,21 +270,29 @@ function parseSpriteData(lines: CA65Line[], spriteDatum: CA65Datum): IncompleteS
             }
         }
 
+        if (stringValue === undefined)
+        {
+            throw new CA65LineError(
+                'A SPRITES or SPRITES2 macro argument without a binary sprite graphics data label was encountered.',
+                filePaths.spriteGroupingDataAsm,
+                spriteDatum.line);
+        }
+
         const incompleteSprite: IncompleteSprite =
         {
-            'Binary Label': stringValue!,
+            'Binary Label': stringValue,
             'Flip Graphics Horizontally': (numericValue & 0b1) === 1,
             'Swim Flag': (numericValue >>> 1) === 1
-        }
+        };
 
         return castToIncompleteSprite(incompleteSprite);
     }
-    catch (error: any)
+    catch (error: unknown)
     {
         const errorLine = error instanceof CA65LineError ? error.line : undefined;
 
         throw new CA65BlockError(
-            unpackErrorMessage(error, `An error occured while parsing sprite data.`),
+            unpackErrorMessage(error, 'An error occured while parsing sprite data.'),
             filePaths.spriteGroupingPointersAsm,
             lines,
             errorLine);
@@ -329,10 +338,10 @@ function assertLineContainsInstruction(line: CA65Line, instruction: string)
     if ((line.instruction.startsWith('.') && !stringEqualsIgnoreCase(line.instruction, instruction)) ||
         line.instruction !== instruction)
     {
-            throw new CA65LineError(
-                `The instruction "${line.instruction}" was present where a "${instruction}" instruction was expected.`,
-                filePaths.spriteGroupingDataAsm,
-                line);
+        throw new CA65LineError(
+            `The instruction "${line.instruction}" was present where a "${instruction}" instruction was expected.`,
+            filePaths.spriteGroupingDataAsm,
+            line);
     }
 }
 
@@ -426,7 +435,7 @@ export async function extractBanks11to15(api: PluginApi, incompleteSpriteGroups:
     return incompleteSpriteGroups as SpriteGroup[];
 }
 
-function sortSpriteGroupKeys(key1: any, key2: any): number
+function sortSpriteGroupKeys(key1: string | symbol, key2: string | symbol): number
 {
     if (typeof key1 !== 'string' || typeof key2 !== 'string')
     {
@@ -450,11 +459,11 @@ function sortSpriteGroupKeys(key1: any, key2: any): number
     return 0;
 }
 
-function replaceSpriteGroupValues(key: any, value: any): any
+function replaceSpriteGroupValues(key: string | symbol, value: unknown): undefined | unknown
 {
     if (key === 'Tiles Wide' || key === 'Tiles High')
     {
-        return undefined
+        return undefined;
     }
 
     return value;
@@ -496,9 +505,9 @@ export async function extractBank03(api: PluginApi): Promise<IncompleteSpriteGro
                     const operandStringValue = getTextFromCA65StringLiteral(line.operandList);
 
                     spriteGroupPalettes.push(
-                    {
-                        'Binary File Path': `src/bin/US/${operandStringValue}`,
-                    })
+                        {
+                            'Binary File Path': `src/bin/US/${operandStringValue}`,
+                        });
                 }
             }
             else
@@ -562,11 +571,11 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
     return incompletePalettes as SpriteGroupPalette[];
 }
 
-function replaceSpriteGroupPaletteValues(key: any, value: any): any
+function replaceSpriteGroupPaletteValues(key: string | symbol, value: unknown): undefined | unknown
 {
     if (Array.isArray(value) && SnesColor.isSnesColor(value[0]))
     {
-        return undefined
+        return undefined;
     }
 
     return value;
@@ -616,7 +625,7 @@ export async function extractSpriteGroupBinaries(api: PluginApi, spriteGroups: S
                     [tileOffsetX, tileOffsetY] = calculateTileOffsets(
                         tileIndex,
                         spriteGroup['Tiles Wide'],
-                        sprite['Flip Graphics Horizontally'])
+                        sprite['Flip Graphics Horizontally']);
 
                     for (let pixelY = 0; pixelY < tile.length; ++pixelY)
                     {

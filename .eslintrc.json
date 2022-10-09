@@ -1,0 +1,93 @@
+{
+    "$schema": "https://json.schemastore.org/eslintrc.json",
+    "env":
+    {
+        "browser": true,
+        "es2021": true
+    },
+    "extends":
+    [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "overrides": [],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions":
+    {
+        "ecmaVersion": "latest",
+        "sourceType": "module"
+    },
+    "plugins":
+    [
+        "@typescript-eslint"
+    ],
+    "rules":
+    {
+        "@typescript-eslint/no-explicit-any":
+        [
+            "warn",
+            {
+                "ignoreRestArgs": true
+            }
+        ],
+        "@typescript-eslint/no-namespace": "off",
+        "array-bracket-newline": "warn",
+        "array-bracket-spacing": "warn",
+        "brace-style":
+        [
+            "warn",
+            "allman",
+            {
+                "allowSingleLine": true
+            }
+        ],
+        "function-call-argument-newline":
+        [
+            "warn",
+            "consistent"
+        ],
+        "indent":
+        [
+            "error",
+            4,
+            {
+                "SwitchCase": 1
+            }
+        ],
+        "linebreak-style":
+        [
+            "warn",
+            "windows"
+        ],
+        "no-inner-declarations": "off",
+        "object-curly-spacing":
+        [
+            "warn",
+            "always",
+            {
+                "objectsInObjects": true
+            }
+
+        ],
+        "padding-line-between-statements":
+        [
+            "warn",
+            { "blankLine": "always", "prev": "*", "next": "return" }
+        ],
+        "quote-props":
+        [
+            "warn",
+            "consistent"
+        ],
+        "quotes":
+        [
+            "warn",
+            "single"
+        ],
+        "semi":
+        [
+            "warn",
+            "always"
+        ]
+    }
+}

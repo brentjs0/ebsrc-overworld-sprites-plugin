@@ -1,6 +1,6 @@
-import { firstItem, isNullishOrEmpty, lastItem, splitAndTrimCSV, substringByLength } from './utility';
+import { firstItem, isNullishOrEmpty, lastItem, objectHasKey, splitAndTrimCSV, substringByLength } from './utility';
 
-export interface CA65Line
+export type CA65Line =
 {
     lineNumber: number;
     sourceExpressionText: string;
@@ -9,9 +9,11 @@ export interface CA65Line
     operandList: string | undefined;
     comment: string | undefined;
     isSignificantToAssembler: boolean;
-};
+}
 
-export interface CA65Datum
+export type CA65LineWithOperands = CA65Line & { operandList: string };
+
+export type CA65Datum =
 {
     line: CA65Line;
     type: DatumTypeString;
@@ -23,7 +25,7 @@ export type DatumTypeString = 'byte' | 'word' | 'dword';
 
 export type CA65PseudoFunctionIdentifier = '.LOWORD' | '.BANKBYTE';
 
-export function readCA65LineData(line: CA65Line): CA65Datum[]
+export function readCA65LineData(line: CA65LineWithOperands): CA65Datum[]
 {
     if (!line.operandList)
     {
@@ -35,15 +37,26 @@ export function readCA65LineData(line: CA65Line): CA65Datum[]
         case '.BYTE':
         case '.WORD':
         case '.DWORD':
-            const dataType = line.instruction.substring(1).toLowerCase();
-            return readDataFromOperandList(dataType as any, line);
+        {
+            const datumType = line.instruction.substring(1).toLowerCase();
+            if (isDatumTypeString(datumType))
+            {
+                return readDataFromOperandList(datumType, line);
+            }
+            break;
+        }
         case 'SPRITES':
             return readSpritesMacroData(line);
         case 'SPRITES2':
             return readSprites2MacroData(line);
-        default:
-            throw new Error(`Data reading behavior is not implemented for "${line.instruction}" instructions.`);
     }
+
+    throw new Error(`Data reading behavior is not implemented for "${line.instruction}" instructions.`);
+}
+
+export function isDatumTypeString(str: string): str is DatumTypeString
+{
+    return ['byte', 'word', 'dword'].includes(str);
 }
 
 export function countCA65DatumBytes(data: CA65Datum[])
@@ -75,7 +88,7 @@ export function getArgumentListFromPseudoFunctionCall(pseudoFunctionCall: string
         pseudoFunctionCall.lastIndexOf(')'));
 }
 
-export function isCA65StringLiteral(value: any): value is string
+export function isCA65StringLiteral(value: unknown): value is string
 {
     return typeof value === 'string' &&
         value.length >= 2 &&
@@ -116,7 +129,7 @@ export function parseCA65Number(numberString: string | undefined): number
 export function* readCA65Lines(fileContents: string, startLabel: string | undefined = undefined): Generator<CA65Line>
 {
     let labelFound: boolean = startLabel === undefined;
-    let lineNumber: number = 0;
+    let lineNumber = 0;
 
     for (const regExpMatch of fileContents.matchAll(ca65LinePattern))
     {
@@ -129,7 +142,13 @@ export function* readCA65Lines(fileContents: string, startLabel: string | undefi
     }
 }
 
-const ca65LinePattern: RegExp = /^[\t ]*(?:(?<label>@?[A-Za-z][A-Za-z0-9_]*):)?[\t ]*(?:(?<instruction>\.?[A-Za-z_0-9]*)[\t ]*(?<operands>[^\n\r;]*[^\n\r; ]+))?[\t ]*(?:;?(?<comment>[^\n\r]*))?/gm;
+export function lineHasOperandList(ca65Line: CA65Line): ca65Line is CA65LineWithOperands
+{
+    return objectHasKey(ca65Line, 'operandList') &&
+        typeof ca65Line.operandList === 'string';
+}
+
+const ca65LinePattern = /^[\t ]*(?:(?<label>@?[A-Za-z][A-Za-z0-9_]*):)?[\t ]*(?:(?<instruction>\.?[A-Za-z_0-9]*)[\t ]*(?<operands>[^\n\r;]*[^\n\r; ]+))?[\t ]*(?:;?(?<comment>[^\n\r]*))?/gm;
 
 function createLine(lineNumber: number, regExpMatch: RegExpMatchArray): CA65Line
 {
@@ -147,9 +166,9 @@ function createLine(lineNumber: number, regExpMatch: RegExpMatchArray): CA65Line
     return line;
 }
 
-function readDataFromOperandList(datumType: DatumTypeString, line: CA65Line): CA65Datum[] 
+function readDataFromOperandList(datumType: DatumTypeString, line: CA65LineWithOperands): CA65Datum[] 
 {
-    return splitAndTrimCSV(line.operandList!)
+    return splitAndTrimCSV(line.operandList)
         .map(o =>
             ({
                 line: line,
@@ -159,23 +178,23 @@ function readDataFromOperandList(datumType: DatumTypeString, line: CA65Line): CA
             }));
 }
 
-function readSpritesMacroData(line: CA65Line): CA65Datum[]
+function readSpritesMacroData(line: CA65LineWithOperands): CA65Datum[]
 {
-    const operands: string[] = splitAndTrimCSV(line.operandList!);
+    const operands: string[] = splitAndTrimCSV(line.operandList);
     const bankByteDatum: CA65Datum =
     {
         line: line,
         type: 'byte',
         sourceExpressionText: `.BANKBYTE(${operands.shift()})`,
         numericValue: NaN
-    }
+    };
 
     return [bankByteDatum, ...readSpritesOperandListData(line, operands)];
 }
 
-function readSprites2MacroData(line: CA65Line): CA65Datum[]
+function readSprites2MacroData(line: CA65LineWithOperands): CA65Datum[]
 {
-    return readSpritesOperandListData(line, splitAndTrimCSV(line.operandList!).slice(1));
+    return readSpritesOperandListData(line, splitAndTrimCSV(line.operandList).slice(1));
 }
 
 function readSpritesOperandListData(line: CA65Line, spriteOperands: string[]): CA65Datum[]
@@ -186,5 +205,5 @@ function readSpritesOperandListData(line: CA65Line, spriteOperands: string[]): C
             type: 'word',
             sourceExpressionText: `.LOWORD(${o})`,
             numericValue: NaN
-        }))
+        }));
 }

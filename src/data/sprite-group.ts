@@ -25,7 +25,7 @@ type BaseSpriteGroup =
 
 function getMissingSpriteGroupPropertyErrorMessage(propertyName: SpriteGroup.Key)
 {
-    return `Sprite group data without a(n) "${propertyName}" value was encountered.`
+    return `Sprite group data without a(n) "${propertyName}" value was encountered.`;
 }
 
 export type SpriteGroup = BaseSpriteGroup &

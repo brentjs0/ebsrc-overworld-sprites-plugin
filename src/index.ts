@@ -57,6 +57,7 @@ const api: PluginApi =
     {
         return await fs.readFile(joinPath(this.project.ebsrcPath, path), 'utf8');
     },
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     async writeDest(path: string, contents: any): Promise<void>
     {
         return await fs.outputFile(joinPath(this.project.ebdestPath, path), contents);
@@ -65,7 +66,8 @@ const api: PluginApi =
     {
         return await fs.outputFile(joinPath(this.project.referencePath, path), contents);
     }
-}
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+};
 
 async function extractReference(api: PluginApi)
 {
@@ -79,12 +81,12 @@ async function extractReference(api: PluginApi)
     await extractSpriteGroupBinaries(api, spriteGroups, spriteGroupPalettes);
 }
 
-async function applyMod(api: PluginApi)
-{
-    // await getPngPalette(PNG.sync.read(await api.getModBin('test-reference.png')));
-    // await getPngPalette(PNG.sync.read(await api.getModBin('test-mspaint.png')));
-    // await getPngPalette(PNG.sync.read(await api.getModBin('test-coilsnake.png')));
-}
+// async function applyMod(api: PluginApi)
+// {
+//     // await getPngPalette(PNG.sync.read(await api.getModBin('test-reference.png')));
+//     // await getPngPalette(PNG.sync.read(await api.getModBin('test-mspaint.png')));
+//     // await getPngPalette(PNG.sync.read(await api.getModBin('test-coilsnake.png')));
+// }
 
 export type PluginApi =
 {
@@ -99,8 +101,10 @@ export type PluginApi =
     getModText(path: string): Promise<string>;
     getSourceBin(path: string): Promise<Buffer>;
     getSourceText(path: string): Promise<string>;
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     writeDest(path: string, contents: any): Promise<void>;
     writeReference(path: string, contents: any): Promise<void>;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 };
 
 extractReference(api);
@@ -109,6 +113,6 @@ extractReference(api);
 module.exports =
 {
     name: 'EbsrcSpriteGroupsPlugin',
-    applyMod: applyMod,
+    //applyMod: applyMod,
     extractReference: extractReference,
 };

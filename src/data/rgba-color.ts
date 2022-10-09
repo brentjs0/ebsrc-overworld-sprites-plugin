@@ -15,21 +15,25 @@ export namespace RgbaColor
 {
     export function create(red: number, green: number, blue: number, alpha: number): RgbaColor
     {
-        checkComponentArgument('red', red);
-        checkComponentArgument('green', green);
-        checkComponentArgument('blue', blue);
-        checkComponentArgument('alpha', alpha);
-
-        const rgbaColor: any =
+        if (checkComponentArgument('red', red) &&
+            checkComponentArgument('green', green) &&
+            checkComponentArgument('blue', blue) &&
+            checkComponentArgument('alpha', alpha))
         {
-            red: red,
-            green: green,
-            blue: blue,
-            alpha: alpha,
-            toSnesColor: toSnesColor
+
+            const rgbaColor: RgbaColor =
+            {
+                red: red,
+                green: green,
+                blue: blue,
+                alpha: alpha,
+                toSnesColor: toSnesColor
+            };
+
+            return rgbaColor;
         }
 
-        return rgbaColor;
+        throw new Error('An RgbaColor object could not be created from the provided values.');
     }
 
     function toSnesColor(this: RgbaColor, scalingMethod: ColorScalingMethod = 'default')
@@ -40,7 +44,7 @@ export namespace RgbaColor
                 fiveBitValues[this.red],
                 fiveBitValues[this.green],
                 fiveBitValues[this.blue],
-                this.alpha === 0)
+                this.alpha === 0);
         }
 
         return SnesColor.create(

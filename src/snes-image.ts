@@ -120,15 +120,15 @@ export namespace SnesImage
         const png = new IndexedPNG();
         png.writeHeader();
         png.writeIHDR(
-        {
-            width: this.getWidth(),
-            height: this.getHeight(),
-            bitDepth: bitDepth,
-            colorType: 3,
-            compressionMethod: 0,
-            filterMethod: 0,
-            interlaceMethod: 0
-        });
+            {
+                width: this.getWidth(),
+                height: this.getHeight(),
+                bitDepth: bitDepth,
+                colorType: 3,
+                compressionMethod: 0,
+                filterMethod: 0,
+                interlaceMethod: 0
+            });
 
         png.writeChunk('PLTE', createPLTE(this.palette));
 
@@ -173,7 +173,7 @@ export namespace SnesImage
 
     function calculateMinimumPossibleBitDepth(paletteLength: number): IndexedBitDepth
     {
-        let maxPaletteLengthForBitDepth: number = 0;
+        let maxPaletteLengthForBitDepth = 0;
         for (const bitDepth of validIndexedBitDepths)
         {
             maxPaletteLengthForBitDepth = Math.pow(2, bitDepth);

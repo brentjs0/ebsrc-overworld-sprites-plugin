@@ -29,7 +29,7 @@ describe('SnesImage', function ()
 
         it('Pre-fills pixel values with width × height zeroes.', function ()
         {
-            const dimensions = 
+            const dimensions =
             [
                 [1, 1],
                 [5, 1],
@@ -54,11 +54,11 @@ describe('SnesImage', function ()
             snesImage.setPixelValue(1, 1, 1);
 
             expect(snesImage.getPixelValues()).to.eql(
-            [
-                0, 0, 0,
-                0, 1, 0,
-                0, 0, 0
-            ])
+                [
+                    0, 0, 0,
+                    0, 1, 0,
+                    0, 0, 0
+                ]);
         });
 
         it('Throws an error when coordinates are out of bounds.', function ()
@@ -74,7 +74,7 @@ describe('SnesImage', function ()
             expect(() => snesImage.setPixelValue(1, 5.6, 1)).to.throw();
             expect(() => snesImage.setPixelValue(4.1, 1, 1)).to.throw();
         });
-    })
+    });
 
     describe('fill()', function ()
     {
@@ -85,29 +85,31 @@ describe('SnesImage', function ()
 
             expect(snesImage.getPixelValues().some(v => v !== 1)).to.be.false;
         });
-    })
+    });
 
     describe('getPaletteColorIndex()', function ()
     {
-        const snesImage: SnesImage = SnesImage.create(1, 1,
-        [
-           SnesColor.create(0, 0, 0),
-           SnesColor.create(1, 1, 1),
-           SnesColor.create(2, 2, 2),
-           SnesColor.create(3, 3, 3),
-           SnesColor.create(4, 4, 4),
-           SnesColor.create(5, 5, 5),
-           SnesColor.create(6, 6, 6),
-           SnesColor.create(7, 7, 7),
-           SnesColor.create(8, 8, 8),
-           SnesColor.create(9, 9, 9),
-           SnesColor.create(10, 10, 10),
-           SnesColor.create(11, 11, 11),
-           SnesColor.create(12, 12, 12),
-           SnesColor.create(13, 13, 13),
-           SnesColor.create(14, 14, 14),
-           SnesColor.create(15, 15, 15)
-        ]);
+        const snesImage: SnesImage = SnesImage.create(
+            1,
+            1,
+            [
+                SnesColor.create(0, 0, 0),
+                SnesColor.create(1, 1, 1),
+                SnesColor.create(2, 2, 2),
+                SnesColor.create(3, 3, 3),
+                SnesColor.create(4, 4, 4),
+                SnesColor.create(5, 5, 5),
+                SnesColor.create(6, 6, 6),
+                SnesColor.create(7, 7, 7),
+                SnesColor.create(8, 8, 8),
+                SnesColor.create(9, 9, 9),
+                SnesColor.create(10, 10, 10),
+                SnesColor.create(11, 11, 11),
+                SnesColor.create(12, 12, 12),
+                SnesColor.create(13, 13, 13),
+                SnesColor.create(14, 14, 14),
+                SnesColor.create(15, 15, 15)
+            ]);
 
         it('Returns the correct index when the color is present.', function ()
         {
@@ -136,19 +138,16 @@ describe('SnesImage', function ()
 
             const pixelData: Uint8Array = (await getPixelsPromise(await snesImage.toPngBuffer(), 'image/png')).data;
             expect([...pixelData]).to.eql(
-            [
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-            ]);
+                [
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+                    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+                ]);
         });
 
         it('Creates a readable PNG buffer without transparency.', async function ()
         {
-            const snesImage: SnesImage = SnesImage.create(5, 5,
-            [
-                SnesColor.create(7, 7, 7, false),
-            ]);
+            const snesImage: SnesImage = SnesImage.create(5, 5, [SnesColor.create(7, 7, 7, false)]);
 
             snesImage.fill(0);
 
@@ -157,21 +156,23 @@ describe('SnesImage', function ()
             {
                 expect(pixelData[i]).to.equal(0xFF);
             }
-        })
+        });
 
         it('Creates a readable PNG buffer with pixels that have the correct transparency.', async function ()
         {
-            const snesImage: SnesImage = SnesImage.create(8, 1,
-            [
-                SnesColor.create(7, 7, 7, true), 
-                SnesColor.create(6, 6, 6, false),
-                SnesColor.create(5, 5, 5, true),
-                SnesColor.create(4, 4, 4, false),
-                SnesColor.create(3, 3, 3, true),
-                SnesColor.create(2, 2, 2, false),
-                SnesColor.create(1, 1, 1, true),
-                SnesColor.create(0, 0, 0, false),
-            ]);
+            const snesImage: SnesImage = SnesImage.create(
+                8,
+                1,
+                [
+                    SnesColor.create(7, 7, 7, true), 
+                    SnesColor.create(6, 6, 6, false),
+                    SnesColor.create(5, 5, 5, true),
+                    SnesColor.create(4, 4, 4, false),
+                    SnesColor.create(3, 3, 3, true),
+                    SnesColor.create(2, 2, 2, false),
+                    SnesColor.create(1, 1, 1, true),
+                    SnesColor.create(0, 0, 0, false),
+                ]);
 
             for (let i = 0; i < snesImage.palette.length; ++i)
             {
@@ -181,8 +182,8 @@ describe('SnesImage', function ()
             const pixelData: Uint8Array = (await getPixelsPromise(await snesImage.toPngBuffer(), 'image/png')).data;
             for (let i = 0; i < snesImage.palette.length; ++i)
             {
-                expect(pixelData[(i * 4) + 3]).to.equal(i % 2 === 0 ? 0x00 : 0xFF)
+                expect(pixelData[(i * 4) + 3]).to.equal(i % 2 === 0 ? 0x00 : 0xFF);
             }
-        })
+        });
     });
 });

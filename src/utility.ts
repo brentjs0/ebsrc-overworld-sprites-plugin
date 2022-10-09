@@ -2,12 +2,17 @@ import * as jsYaml from 'js-yaml';
 import upperFirst from 'lodash/upperFirst';
 import words from 'lodash/words';
 
+export function objectHasKey<O extends object, K extends string>(obj: O, keyName: K): obj is O & Record<K, unknown>
+{
+    return keyName in obj;
+}
+
 export function stringEqualsIgnoreCase(string1: string, string2: string): boolean
 {
     return string1.toUpperCase() === string2.toUpperCase();
 }
 
-export function isString(value: any): value is string
+export function isString(value: unknown): value is string
 {
     return typeof value === 'string';
 }
@@ -15,21 +20,23 @@ export function isString(value: any): value is string
 export function substringByLength(str: string, start: number, length: number | undefined = undefined)
 {
     length = length ?? str.length - start;
+
     return str.substring(start, start + length);
 }
 
-export function isOptionalString(value: any): value is string | undefined
+export function isOptionalString(value: unknown): value is string | undefined
 {
     const typeName: string = typeof value;
+
     return typeName === 'undefined' || typeName === 'string';
 }
 
-export function isNullish(value: any): value is undefined | null
+export function isNullish(value: unknown): value is undefined | null
 {
     return value === undefined || value === null;
 }
 
-export function isNullishOrEmpty(value: any): value is undefined | null | ''
+export function isNullishOrEmpty(value: unknown): value is undefined | null | ''
 {
     return isNullish(value) || (isString(value) && value.trim() === '');
 }
@@ -61,15 +68,15 @@ export function lastItem<T>(arrayLike: ArrayLike<T>): T | undefined
  */
 export function dumpArrayAsYAMLWithNumericKeys(objects: object[], options: jsYaml.DumpOptions | undefined = undefined): string
 {
-  let nodes = [];
-  for (let i = 0; i < objects.length; ++i)
-  {
-    let node = `${i}:\n  `;
-    node += jsYaml.dump(objects[i], options).trim().split('\n').join('\n  ');
-    nodes.push(node);
-  }
-  
-  return `${nodes.join('\n')}\n`;
+    const nodes = [];
+    for (let i = 0; i < objects.length; ++i)
+    {
+        let node = `${i}:\n  `;
+        node += jsYaml.dump(objects[i], options).trim().split('\n').join('\n  ');
+        nodes.push(node);
+    }
+    
+    return `${nodes.join('\n')}\n`;
 }
 
 export function toTitleCase(str: string): string 
@@ -161,7 +168,7 @@ export function splitWhere(str: string, splitCondition: (characterIndex: number)
     return substrings;
 }
 
-export function unpackErrorMessage(caughtValue: any, fallbackErrorMessage: string) : string
+export function unpackErrorMessage(caughtValue: unknown, fallbackErrorMessage: string) : string
 {
     if (caughtValue instanceof Error)
     {
@@ -174,4 +181,9 @@ export function unpackErrorMessage(caughtValue: any, fallbackErrorMessage: strin
     }
 
     return fallbackErrorMessage;
+}
+
+export function filterToType<T, U extends T>(arr: T[], typePredicate: (item: T) => item is U): U[]
+{
+    return arr.filter(typePredicate);
 }

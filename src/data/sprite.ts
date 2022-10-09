@@ -10,7 +10,7 @@ type BaseSprite =
 
 function getMissingSpritePropertyErrorMessage(propertyName: Sprite.Key)
 {
-    return `Sprite data without a(n) "${propertyName}" value was encountered.`
+    return `Sprite data without a(n) "${propertyName}" value was encountered.`;
 }
 
 export type Sprite = BaseSprite &
@@ -23,7 +23,8 @@ export namespace Sprite
     export function validateForExtract(value: Partial<Sprite>): string | undefined
     {
         const errorMessage = IncompleteSprite.validateForExtract(value);
-        if (errorMessage) {
+        if (errorMessage)
+        {
             return errorMessage;
         }
         
