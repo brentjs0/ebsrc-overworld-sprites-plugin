@@ -2,14 +2,14 @@ import { RgbaColor } from './data/rgba-color';
 
 function readIndexedPngPalette(data: Buffer): RgbaColor[] | undefined
 {
-    const dataView = new DataView(data.buffer);
+    const dataView = new DataView(new Uint8Array(data.buffer));
     let plteChunkData: Uint8Array | undefined = undefined;
     let trnsChunkData: Uint8Array | undefined = undefined;
 
-    let chunkDatalength = 0;
-    for (let chunkStartOffset = 8; chunkStartOffset < data.byteLength; chunkStartOffset += chunkDatalength + 12)
+    let chunkDataLength = 0;
+    for (let chunkStartOffset = 8; chunkStartOffset < data.byteLength; chunkStartOffset += chunkDataLength + 12)
     {
-        chunkDatalength = dataView.getUint32(chunkStartOffset, false);
+        chunkDataLength = dataView.getUint32(chunkStartOffset, false);
 
         const chunkType = String.fromCharCode(
             dataView.getUint8(chunkStartOffset + 4),
@@ -20,17 +20,19 @@ function readIndexedPngPalette(data: Buffer): RgbaColor[] | undefined
         switch (chunkType)
         {
             case 'IHDR':
+            {
                 const colorType: number = dataView.getUint8(chunkStartOffset + 17);
                 if (colorType !== 3)
                 {
                     return undefined;
                 }
                 break;
+            }
             case 'PLTE':
-                plteChunkData = getUint8Range(dataView, chunkStartOffset + 8, chunkDatalength);
+                plteChunkData = getUint8Range(dataView, chunkStartOffset + 8, chunkDataLength);
                 break;
             case 'tRNS':
-                trnsChunkData = getUint8Range(dataView, chunkStartOffset + 8, chunkDatalength);
+                trnsChunkData = getUint8Range(dataView, chunkStartOffset + 8, chunkDataLength);
                 break;
         }
 
@@ -73,7 +75,7 @@ function parsePaletteFromPngChunkData(plteChunkData: Uint8Array, trnsChunkData: 
             plteChunkData[plteOffset + 0],
             plteChunkData[plteOffset + 1],
             plteChunkData[plteOffset + 2],
-            trnsChunkData?.[i] ?? 255))
+            trnsChunkData?.[i] ?? 255));
     }
 
     return rgbaColors;
