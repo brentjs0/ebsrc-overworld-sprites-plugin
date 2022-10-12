@@ -1,41 +1,44 @@
 import { expect } from 'chai';
 import { stringEqualsIgnoreCase } from './utility';
 
-describe('stringEqualsIgnoreCase()', function ()
+describe('utility.ts', function ()
 {
-    it('Returns true for equal strings.', function()
+    describe('stringEqualsIgnoreCase()', function ()
     {
-        const equalPairs: [string, string][] = 
-        [
-            ['abc', 'abc'],
-            ['aBc', 'AbC'],
-            ['ABC', 'abc'],
-            ['abc', 'ABC'],
-            ['', ''],
-            ['i', 'I'],
-        ];
-
-        for (const [string1, string2] of equalPairs)
+        it('Returns true for equal strings.', function()
         {
-            expect(stringEqualsIgnoreCase(string1, string2)).to.be.true;
-        }
-    });
+            const equalPairs: [string, string][] = 
+            [
+                ['abc', 'abc'],
+                ['aBc', 'AbC'],
+                ['ABC', 'abc'],
+                ['abc', 'ABC'],
+                ['', ''],
+                ['i', 'I'],
+            ];
 
-    it('Returns false for unequal strings.', function()
-    {
-        const equalPairs: [string, string][] = 
-        [
-            ['abc', 'abd'],
-            ['abb', 'abc'],
-            ['ABC', 'ABCD'],
-            ['aabc', ''],
-            ['', 'a'],
-            ['á', 'a'],
-        ];
+            for (const [string1, string2] of equalPairs)
+            {
+                expect(stringEqualsIgnoreCase(string1, string2)).to.be.true;
+            }
+        });
 
-        for (const [string1, string2] of equalPairs)
+        it('Returns false for unequal strings.', function()
         {
-            expect(stringEqualsIgnoreCase(string1, string2)).to.be.false;
-        }
+            const equalPairs: [string, string][] = 
+            [
+                ['abc', 'abd'],
+                ['abb', 'abc'],
+                ['ABC', 'ABCD'],
+                ['aabc', ''],
+                ['', 'a'],
+                ['á', 'a'],
+            ];
+
+            for (const [string1, string2] of equalPairs)
+            {
+                expect(stringEqualsIgnoreCase(string1, string2)).to.be.false;
+            }
+        });
     });
 });

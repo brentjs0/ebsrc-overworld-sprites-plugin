@@ -7,7 +7,7 @@ import { SnesImage } from './snes-image';
 
 const getPixelsPromise = promisify(getPixels);
 
-describe('snes-image', function ()
+describe('snes-image.ts', function ()
 {
     describe('SnesImage()', function ()
     {

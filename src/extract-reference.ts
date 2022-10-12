@@ -1,8 +1,7 @@
 import { Buffer } from 'node:buffer';
 
 import { filePaths, PluginApi, referenceYmlHeader } from '.';
-import
-{
+import {
     CA65Datum,
     CA65Line,
     countCA65DatumBytes,
@@ -17,12 +16,24 @@ import
 } from './ca65';
 import { CA65BlockError, CA65LineError } from './ca65-error';
 import { isSnesColor, SnesColor } from './data/snes-color';
-import { IncompleteSprite, Sprite, spriteKeyDisplayOrder, validateIncompleteExtractedSprite } from './data/sprite';
-import { IncompleteSpriteGroup, SpriteGroup, spriteGroupKeyDisplayOrder, validateExtractedSpriteGroup, validateIncompleteExtractedSpriteGroup } from './data/sprite-group';
-import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
-import { SnesImage } from './snes-image';
 import
 {
+    IncompleteSprite,
+    Sprite,
+    spriteKeyDisplayOrder,
+    validateIncompleteExtractedSprite
+} from './data/sprite';
+import
+{
+    IncompleteSpriteGroup,
+    SpriteGroup,
+    spriteGroupKeyDisplayOrder,
+    validateExtractedSpriteGroup,
+    validateIncompleteExtractedSpriteGroup,
+} from './data/sprite-group';
+import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
+import { SnesImage } from './snes-image';
+import {
     dumpArrayAsYAMLWithNumericKeys,
     filterToType,
     isNullishOrEmpty,
