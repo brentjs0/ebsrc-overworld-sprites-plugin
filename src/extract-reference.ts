@@ -16,9 +16,9 @@ import
     readCA65Lines,
 } from './ca65';
 import { CA65BlockError, CA65LineError } from './ca65-error';
-import { SnesColor } from './data/snes-color';
-import { IncompleteSprite, Sprite } from './data/sprite';
-import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
+import { isSnesColor, SnesColor } from './data/snes-color';
+import { IncompleteSprite, Sprite, spriteKeyDisplayOrder, validateIncompleteExtractedSprite } from './data/sprite';
+import { IncompleteSpriteGroup, SpriteGroup, spriteGroupKeyDisplayOrder, validateExtractedSpriteGroup, validateIncompleteExtractedSpriteGroup } from './data/sprite-group';
 import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
 import { SnesImage } from './snes-image';
 import
@@ -231,7 +231,7 @@ function getPngFilePath(spriteGroupingPointerTableIndex: number, binaryLabel: st
 
 function castToIncompleteSpriteGroup(group: Partial<IncompleteSpriteGroup>): IncompleteSpriteGroup
 {
-    const errorMessage: string | undefined = IncompleteSpriteGroup.validateForExtract(group);
+    const errorMessage: string | undefined = validateIncompleteExtractedSpriteGroup(group);
     if (errorMessage !== undefined)
     {
         throw new Error(errorMessage);
@@ -301,7 +301,7 @@ function parseSpriteData(lines: CA65Line[], spriteDatum: CA65Datum): IncompleteS
 
 function castToIncompleteSprite(sprite: Partial<IncompleteSprite>): IncompleteSprite
 {
-    const errorMessage: string | undefined = IncompleteSprite.validateForExtract(sprite);
+    const errorMessage: string | undefined = validateIncompleteExtractedSprite(sprite);
     if (errorMessage !== undefined)
     {
         throw new Error(errorMessage);
@@ -419,7 +419,7 @@ export async function extractBanks11to15(api: PluginApi, incompleteSpriteGroups:
 
     for (const spriteGroup of incompleteSpriteGroups)
     {
-        const spriteGroupErrorMessage: string | undefined = SpriteGroup.validateForExtract(spriteGroup);
+        const spriteGroupErrorMessage: string | undefined = validateExtractedSpriteGroup(spriteGroup);
         if (spriteGroupErrorMessage !== undefined)
         {
             throw new Error(spriteGroupErrorMessage);
@@ -444,8 +444,8 @@ function sortSpriteGroupKeys(key1: string | symbol, key2: string | symbol): numb
 
     const keyOrderLists =
     [
-        SpriteGroup.keyDisplayOrder as string[],
-        Sprite.keyDisplayOrder as string[],
+        spriteGroupKeyDisplayOrder as string[],
+        spriteKeyDisplayOrder as string[],
     ];
 
     for (const keyOrderList of keyOrderLists)
@@ -528,8 +528,8 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
 
     let pngPaletteIndex = 0;
 
-    const snesImage: SnesImage = SnesImage.create(pngWidth, pngHeight);
-    snesImage.palette[lastPaletteIndex] = SnesColor.create(15, 15, 15, true);
+    const snesImage: SnesImage = SnesImage(pngWidth, pngHeight);
+    snesImage.palette[lastPaletteIndex] = SnesColor(15, 15, 15, true);
     snesImage.fill(lastPaletteIndex);
 
     for (let paletteNumber = 0; paletteNumber < incompletePalettes.length; ++paletteNumber)
@@ -549,10 +549,10 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
             const green5 = (word & 0b0000_0011_1110_0000) >>> 5;
             const red5 = word & 0b0000_0000_0001_1111;
 
-            const snesColor = SnesColor.create(red5, green5, blue5, bufferOffset === 0);
+            const snesColor = SnesColor(red5, green5, blue5, bufferOffset === 0);
             spriteGroupPalette.Palette.push(snesColor);
 
-            snesImage.palette[pngPaletteIndex] = SnesColor.create(red5, green5, blue5);
+            snesImage.palette[pngPaletteIndex] = SnesColor(red5, green5, blue5);
             snesImage.setPixelValue(x, y, pngPaletteIndex);
 
             pngPaletteIndex++;
@@ -573,7 +573,7 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
 
 function replaceSpriteGroupPaletteValues(key: string | symbol, value: unknown): undefined | unknown
 {
-    if (Array.isArray(value) && SnesColor.isSnesColor(value[0]))
+    if (Array.isArray(value) && isSnesColor(value[0]))
     {
         return undefined;
     }
@@ -601,7 +601,7 @@ export async function extractSpriteGroupBinaries(api: PluginApi, spriteGroups: S
         const spriteRowCount = Math.ceil(spriteGroup['Length'] / spritesPerRow);
 
         const palette: SnesColor[] = spriteGroupPalettes[spriteGroup['Original Palette']]['Palette'];
-        const indexedPng = SnesImage.create(spriteWidth * spritesPerRow, spriteHeight * spriteRowCount, palette);
+        const indexedPng = SnesImage(spriteWidth * spritesPerRow, spriteHeight * spriteRowCount, palette);
         indexedPng.fill(0);
 
         let spriteOffsetX = 0;

@@ -71,7 +71,7 @@ function parsePaletteFromPngChunkData(plteChunkData: Uint8Array, trnsChunkData: 
     {
         const plteOffset = i * 3;
 
-        rgbaColors.push(RgbaColor.create(
+        rgbaColors.push(RgbaColor(
             plteChunkData[plteOffset + 0],
             plteChunkData[plteOffset + 1],
             plteChunkData[plteOffset + 2],

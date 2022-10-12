@@ -30,7 +30,6 @@
                 "ignoreRestArgs": true
             }
         ],
-        "@typescript-eslint/no-namespace": "off",
         "array-bracket-newline": "warn",
         "array-bracket-spacing": "warn",
         "brace-style":
@@ -48,7 +47,7 @@
         ],
         "indent":
         [
-            "error",
+            "warn",
             4,
             {
                 "SwitchCase": 1
@@ -59,7 +58,6 @@
             "warn",
             "windows"
         ],
-        "no-inner-declarations": "off",
         "object-curly-spacing":
         [
             "warn",
