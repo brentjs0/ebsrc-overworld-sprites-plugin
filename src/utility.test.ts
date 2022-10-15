@@ -1,11 +1,13 @@
 import { expect } from 'chai';
-import { stringEqualsIgnoreCase } from './utility';
+import { describeFunctionExport as describeFunctionExport } from './test-helpers';
+
+import * as m from './utility';
 
 describe('utility.ts', function ()
 {
-    describe('stringEqualsIgnoreCase()', function ()
+    describeFunctionExport<typeof m>('stringEqualsIgnoreCase()', function ()
     {
-        it('Returns true for equal strings.', function()
+        it('Returns true for equal strings.', function ()
         {
             const equalPairs: [string, string][] = 
             [
@@ -19,11 +21,11 @@ describe('utility.ts', function ()
 
             for (const [string1, string2] of equalPairs)
             {
-                expect(stringEqualsIgnoreCase(string1, string2)).to.be.true;
+                expect(m.stringEqualsIgnoreCase(string1, string2)).to.be.true;
             }
         });
 
-        it('Returns false for unequal strings.', function()
+        it('Returns false for unequal strings.', function ()
         {
             const unequalPairs: [string, string][] = 
             [
@@ -37,7 +39,7 @@ describe('utility.ts', function ()
 
             for (const [string1, string2] of unequalPairs)
             {
-                expect(stringEqualsIgnoreCase(string1, string2)).to.be.false;
+                expect(m.stringEqualsIgnoreCase(string1, string2)).to.be.false;
             }
         });
     });

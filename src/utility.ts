@@ -1,4 +1,5 @@
 import * as fs from 'fs-extra';
+import * as path from 'path';
 import * as jsYaml from 'js-yaml';
 import upperFirst from 'lodash/upperFirst';
 import words from 'lodash/words';
@@ -189,7 +190,41 @@ export function filterToType<T, U extends T>(arr: T[], typePredicate: (item: T) 
     return arr.filter(typePredicate);
 }
 
-export async function listDir(path: string): Promise<string[]>
+export function union<T>(array1: T[], array2: T[], ...otherArrays: T[][]): T[]
 {
-    return fs.readdir(path);
+    const set = new Set<T>(array1);
+    const arrays = [...otherArrays];
+    arrays.unshift(array2);
+    for (const array of arrays)
+    {
+        for (const t of array)
+        {
+            set.add(t);
+        }
+    }
+
+    return [...set];
+}
+
+export async function listDir(dirPath: string): Promise<string[]>
+{
+    let list: string[] = [];
+
+    const fileAndDirNames: string[] = await fs.readdir(dirPath);
+    for (const fileOrDirName of fileAndDirNames)
+    {
+        const fullPathToFileOrDir = path.join(dirPath, fileOrDirName);
+        if ((await fs.lstat(fullPathToFileOrDir)).isDirectory())
+        {
+            const subDirList = await listDir(fullPathToFileOrDir);
+            list.push(`${fileOrDirName}/`);
+            list = union(list, subDirList.map(x => `${fileOrDirName}/${x}`));
+        }
+        else
+        {
+            list.push(fileOrDirName);
+        }
+    }
+
+    return list;
 }

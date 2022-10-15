@@ -40,6 +40,11 @@
                 "allowSingleLine": true
             }
         ],
+        "comma-dangle":
+        [
+            "warn",
+            "never"
+        ],
         "function-call-argument-newline":
         [
             "warn",
@@ -70,7 +75,11 @@
         "padding-line-between-statements":
         [
             "warn",
-            { "blankLine": "always", "prev": "*", "next": "return" }
+            {
+                "blankLine": "always",
+                "prev": "*",
+                "next": "return"
+            }
         ],
         "quote-props":
         [
@@ -86,6 +95,15 @@
         [
             "warn",
             "always"
+        ],
+        "space-before-function-paren":
+        [
+            "warn",
+            {
+                "anonymous": "always",
+                "asyncArrow": "always",
+                "named": "never"
+            }
         ]
     }
 }

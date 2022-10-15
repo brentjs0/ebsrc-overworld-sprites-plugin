@@ -5,7 +5,7 @@ import * as jsYaml from 'js-yaml';
 
 export async function importSpriteGroupPalettes(api: PluginApi): Promise<SpriteGroupPalette[]>
 {
-    const f = await api.listModFiles();
+    const modFiles: string[] = await api.listModFiles();
 
     return [];
 }

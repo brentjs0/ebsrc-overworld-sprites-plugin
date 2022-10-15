@@ -1,8 +1,7 @@
 // An instance of PluginApi (below) is provided to all javascript plugins
 import * as fs from 'fs-extra';
-import * as path from 'path';
+import { join as joinPath } from 'path';
 import * as utils from './utility';
-const joinPath = path.join;
 
 // Filters files with optional prefix and suffix
 function filterFiles(list: string[], prefix: string | undefined, suffix: string | undefined): string[]
