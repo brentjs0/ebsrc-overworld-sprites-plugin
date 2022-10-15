@@ -25,7 +25,7 @@ describe('utility.ts', function ()
 
         it('Returns false for unequal strings.', function()
         {
-            const equalPairs: [string, string][] = 
+            const unequalPairs: [string, string][] = 
             [
                 ['abc', 'abd'],
                 ['abb', 'abc'],
@@ -35,7 +35,7 @@ describe('utility.ts', function ()
                 ['á', 'a'],
             ];
 
-            for (const [string1, string2] of equalPairs)
+            for (const [string1, string2] of unequalPairs)
             {
                 expect(stringEqualsIgnoreCase(string1, string2)).to.be.false;
             }

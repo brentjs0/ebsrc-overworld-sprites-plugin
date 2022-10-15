@@ -1,5 +1,3 @@
-import * as fs from 'fs-extra';
-import * as path from 'path';
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
 import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
 import
@@ -12,7 +10,10 @@ import
     extractSpriteGroupingPointers,
 } from './extract-reference';
 
-const joinPath = path.join;
+import { listDir } from './utility';
+
+import PluginApi, { Project } from './mock-plugin-api';
+import { importSpriteGroupPalettes } from './apply-mod';
 
 export const referenceYmlHeader = '# File Format: ebsrc-sprite-groups-plugin v1.0.0';
 
@@ -32,42 +33,22 @@ export const filePaths =
     spriteGroupsDirectory: 'SpriteGroups/'
 } as const;
 
-const api: PluginApi =
+
+async function getEbsrcListing(): Promise<string[]>
 {
-    path: 'C:/Users/brent/source/repos/ebsrc-project/mod',
-    project:
-    {
-        ebsrcPath: 'C:/Users/brent/source/repos/ebsrc-project/ebsrc',
-        referencePath: 'C:/Users/brent/source/repos/ebsrc-project/reference',
-        ebdestPath: 'C:/Users/brent/source/repos/ebsrc-project/ebdest'
-    },
-    async getModBin(path: string): Promise<Buffer>
-    {
-        return await fs.readFile(joinPath(this.path, path));
-    },
-    async getModText(path: string): Promise<string>
-    {
-        return await fs.readFile(joinPath(this.path, path), 'utf8');
-    },
-    async getSourceBin(path: string): Promise<Buffer>
-    {
-        return await fs.readFile(joinPath(this.project.ebsrcPath, path));
-    },
-    async getSourceText(path: string): Promise<string>
-    {
-        return await fs.readFile(joinPath(this.project.ebsrcPath, path), 'utf8');
-    },
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    async writeDest(path: string, contents: any): Promise<void>
-    {
-        return await fs.outputFile(joinPath(this.project.ebdestPath, path), contents);
-    },
-    async writeReference(path: string, contents: any): Promise<void>
-    {
-        return await fs.outputFile(joinPath(this.project.referencePath, path), contents);
-    }
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+    return listDir('C:/Users/brent/source/repos/ebsrc-project/ebsrc');
+}
+
+const project: Project = 
+{
+    path: 'C:/Users/brent/source/repos/ebsrc-project',
+    ebsrcPath: 'C:/Users/brent/source/repos/ebsrc-project/ebsrc',
+    ebsrcListing: getEbsrcListing(),
+    referencePath: 'C:/Users/brent/source/repos/ebsrc-project/reference',
+    ebdestPath: 'C:/Users/brent/source/repos/ebsrc-project/ebdest'
 };
+
+const api: PluginApi = new PluginApi(project, 'EbsrcSpriteGroupsPlugin', 'mod');
 
 async function extractReference(api: PluginApi)
 {
@@ -81,38 +62,19 @@ async function extractReference(api: PluginApi)
     await extractSpriteGroupBinaries(api, spriteGroups, spriteGroupPalettes);
 }
 
-// async function applyMod(api: PluginApi)
-// {
-//     // await getPngPalette(PNG.sync.read(await api.getModBin('test-reference.png')));
-//     // await getPngPalette(PNG.sync.read(await api.getModBin('test-mspaint.png')));
-//     // await getPngPalette(PNG.sync.read(await api.getModBin('test-coilsnake.png')));
-// }
-
-export type PluginApi =
+async function applyMod(api: PluginApi)
 {
-    path: string;
-    project:
-    {
-        ebsrcPath: string;
-        referencePath: string;
-        ebdestPath: string;
-    };
-    getModBin(path: string): Promise<Buffer>;
-    getModText(path: string): Promise<string>;
-    getSourceBin(path: string): Promise<Buffer>;
-    getSourceText(path: string): Promise<string>;
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    writeDest(path: string, contents: any): Promise<void>;
-    writeReference(path: string, contents: any): Promise<void>;
-    /* eslint-enable @typescript-eslint/no-explicit-any */
-};
+    // await getPngPalette(PNG.sync.read(await api.getModBin('test-reference.png')));
+    // await getPngPalette(PNG.sync.read(await api.getModBin('test-mspaint.png')));
+    const sgps = await importSpriteGroupPalettes(api);
+}
 
-extractReference(api);
-//applyMod(api);
+//extractReference(api);
+applyMod(api);
 
 module.exports =
 {
     name: 'EbsrcSpriteGroupsPlugin',
-    //applyMod: applyMod,
+    applyMod: applyMod,
     extractReference: extractReference,
 };

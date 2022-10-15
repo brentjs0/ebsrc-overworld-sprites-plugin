@@ -1,4 +1,14 @@
+import PluginApi from './mock-plugin-api';
 import { RgbaColor } from './data/rgba-color';
+import { SpriteGroupPalette } from './data/sprite-group-palette';
+import * as jsYaml from 'js-yaml';
+
+export async function importSpriteGroupPalettes(api: PluginApi): Promise<SpriteGroupPalette[]>
+{
+    const f = await api.listModFiles();
+
+    return [];
+}
 
 function readIndexedPngPalette(data: Buffer): RgbaColor[] | undefined
 {

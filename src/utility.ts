@@ -1,3 +1,4 @@
+import * as fs from 'fs-extra';
 import * as jsYaml from 'js-yaml';
 import upperFirst from 'lodash/upperFirst';
 import words from 'lodash/words';
@@ -186,4 +187,9 @@ export function unpackErrorMessage(caughtValue: unknown, fallbackErrorMessage: s
 export function filterToType<T, U extends T>(arr: T[], typePredicate: (item: T) => item is U): U[]
 {
     return arr.filter(typePredicate);
+}
+
+export async function listDir(path: string): Promise<string[]>
+{
+    return fs.readdir(path);
 }

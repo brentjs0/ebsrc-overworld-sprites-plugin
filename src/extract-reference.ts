@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 
-import { filePaths, PluginApi, referenceYmlHeader } from '.';
+import { filePaths, referenceYmlHeader } from '.';
 import {
     CA65Datum,
     CA65Line,
@@ -32,8 +32,10 @@ import
     validateIncompleteExtractedSpriteGroup,
 } from './data/sprite-group';
 import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
+import PluginApi from './mock-plugin-api';
 import { SnesImage } from './snes-image';
-import {
+import
+{
     dumpArrayAsYAMLWithNumericKeys,
     filterToType,
     isNullishOrEmpty,
