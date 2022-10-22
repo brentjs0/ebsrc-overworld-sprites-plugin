@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 
-import { filePaths, referenceYmlHeader } from '.';
+import { filePaths, yamlHeader } from './plugin';
 import {
     CA65Datum,
     CA65Line,
@@ -36,7 +36,7 @@ import PluginApi from './mock-plugin-api';
 import { SnesImage } from './snes-image';
 import
 {
-    dumpArrayAsYAMLWithNumericKeys,
+    dumpArrayAsYamlWithNumericKeys,
     filterToType,
     isNullishOrEmpty,
     removePrefix,
@@ -440,8 +440,8 @@ export async function extractBanks11to15(api: PluginApi, incompleteSpriteGroups:
     }
 
     const spriteGroupsYmlContents =
-        referenceYmlHeader + '\n' +
-        dumpArrayAsYAMLWithNumericKeys(incompleteSpriteGroups, { sortKeys: sortSpriteGroupKeys, replacer: replaceSpriteGroupValues });
+        yamlHeader + '\n' +
+        dumpArrayAsYamlWithNumericKeys(incompleteSpriteGroups, { sortKeys: sortSpriteGroupKeys, replacer: replaceSpriteGroupValues });
 
     api.writeReference(filePaths.spriteGroupsYml, spriteGroupsYmlContents);
 
@@ -576,8 +576,8 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
     api.writeReference(filePaths.spriteGroupPalettesPng, await snesImage.toPngBuffer());
 
     const spriteGroupPalettesYmlContents =
-        referenceYmlHeader + '\n' +
-        dumpArrayAsYAMLWithNumericKeys(incompletePalettes, { replacer: replaceSpriteGroupPaletteValues });
+        yamlHeader + '\n' +
+        dumpArrayAsYamlWithNumericKeys(incompletePalettes, { replacer: replaceSpriteGroupPaletteValues });
 
     api.writeReference(filePaths.spriteGroupPalettesYml, spriteGroupPalettesYmlContents);
 

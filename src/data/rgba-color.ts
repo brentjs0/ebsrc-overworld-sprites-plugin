@@ -1,4 +1,4 @@
-import { ColorScalingMethod, SnesColor } from './snes-color';
+import { ColorScalingMethods, SnesColor } from './snes-color';
 
 export type RgbaColor =
 {
@@ -6,7 +6,7 @@ export type RgbaColor =
     green: number;
     blue: number;
     alpha: number;
-    toSnesColor: (scalingMethod?: ColorScalingMethod) => SnesColor;
+    toSnesColor: (scalingMethod?: ColorScalingMethods) => SnesColor;
 };
 
 export function RgbaColor(red: number, green: number, blue: number, alpha: number): RgbaColor
@@ -31,9 +31,9 @@ export function RgbaColor(red: number, green: number, blue: number, alpha: numbe
     throw new Error('An RgbaColor object could not be created from the provided values.');
 }
 
-function toSnesColor(this: RgbaColor, scalingMethod: ColorScalingMethod = 'default')
+function toSnesColor(this: RgbaColor, scalingMethod: ColorScalingMethods = ColorScalingMethods.Default)
 {
-    if (scalingMethod === 'default')
+    if (scalingMethod === ColorScalingMethods.Default)
     {
         return SnesColor(
             fiveBitValues[this.red],

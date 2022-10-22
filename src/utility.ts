@@ -68,7 +68,7 @@ export function lastItem<T>(arrayLike: ArrayLike<T>): T | undefined
  * @param objects - An array of objects to serialize as YAML.
  * @returns An array of objects as YAML with unquoted numeric keys.
  */
-export function dumpArrayAsYAMLWithNumericKeys(objects: object[], options: jsYaml.DumpOptions | undefined = undefined): string
+export function dumpArrayAsYamlWithNumericKeys(objects: object[], options: jsYaml.DumpOptions | undefined = undefined): string
 {
     const nodes = [];
     for (let i = 0; i < objects.length; ++i)
@@ -79,6 +79,28 @@ export function dumpArrayAsYAMLWithNumericKeys(objects: object[], options: jsYam
     }
     
     return `${nodes.join('\n')}\n`;
+}
+
+export function loadYamlWithNumericKeysAsArray(yaml: string): unknown[]
+{
+    const obj: unknown = jsYaml.load(yaml);
+    if (typeof obj === 'object' && obj !== null)
+    {
+        const array: unknown[] = [];
+        for (const [key, value] of Object.entries(obj))
+        {
+            const numericKey: number = Number.parseInt(key, 10);
+            if (Number.isNaN(numericKey))
+            {
+                throw new Error('A non-numeric key was encounterd while deserializing a YAML array.');
+            }
+            array[numericKey] = value;
+        }
+
+        return array;
+    }
+
+    throw new Error('The provided YAML could not be deserialized as an object.');
 }
 
 export function toTitleCase(str: string): string 
@@ -227,4 +249,28 @@ export async function listDir(dirPath: string): Promise<string[]>
     }
 
     return list;
+}
+
+export function trim(str: string, startTrimPattern = /^\s+/, endTrimPattern = /\s+$/): string
+{
+    const startPatternString = getRegExpPatternString(startTrimPattern);
+    if (!startPatternString.startsWith('^'))
+    {
+        throw new Error('startTrimPattern must begin with a "start of string" anchor character (^).');
+    }
+
+    const endPatternString = getRegExpPatternString(endTrimPattern);
+    if (!endPatternString.endsWith('$'))
+    {
+        throw new Error('endTrimPattern must end with an "end of string" anchor character ($).');
+    }
+
+    return str.replace(startTrimPattern, '').replace(endTrimPattern, '');
+}
+
+export function getRegExpPatternString(regExp: RegExp): string
+{
+    const regExpString = regExp.toString();
+
+    return regExpString.substring(1, regExpString.lastIndexOf('/'));
 }

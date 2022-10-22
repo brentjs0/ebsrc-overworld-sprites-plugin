@@ -10,45 +10,9 @@ import
     extractSpriteGroupingPointers,
 } from './extract-reference';
 
-import { listDir } from './utility';
-
-import PluginApi, { Project } from './mock-plugin-api';
+import PluginApi, { pluginName } from './mock-plugin-api';
 import { importSpriteGroupPalettes } from './apply-mod';
-
-export const referenceYmlHeader = '# File Format: ebsrc-sprite-groups-plugin v1.0.0';
-
-export const filePaths =
-{
-    spriteGroupingPointersAsm: 'src/data/sprite_grouping_pointers.asm',
-    spriteGroupingDataAsm: 'src/data/sprite_grouping_data.asm',
-    bank11Asm: 'src/bankconfig/US/bank11.asm',
-    bank12Asm: 'src/bankconfig/US/bank12.asm',
-    bank13Asm: 'src/bankconfig/US/bank13.asm',
-    bank14Asm: 'src/bankconfig/US/bank14.asm',
-    bank15Asm: 'src/bankconfig/US/bank15.asm',
-    bank03Asm: 'src/bankconfig/US/bank03.asm',
-    spriteGroupsYml: 'sprite_groups.yml',
-    spriteGroupPalettesYml: 'sprite_group_palettes.yml',
-    spriteGroupPalettesPng: 'sprite_group_palettes.png',
-    spriteGroupsDirectory: 'SpriteGroups/'
-} as const;
-
-
-async function getEbsrcListing(): Promise<string[]>
-{
-    return listDir('C:/Users/brent/source/repos/ebsrc-project/ebsrc');
-}
-
-const project: Project = 
-{
-    path: 'C:/Users/brent/source/repos/ebsrc-project',
-    ebsrcPath: 'C:/Users/brent/source/repos/ebsrc-project/ebsrc',
-    ebsrcListing: getEbsrcListing(),
-    referencePath: 'C:/Users/brent/source/repos/ebsrc-project/reference',
-    ebdestPath: 'C:/Users/brent/source/repos/ebsrc-project/ebdest'
-};
-
-const api: PluginApi = new PluginApi(project, 'EbsrcSpriteGroupsPlugin', 'mod');
+import { project } from './mock-project';
 
 async function extractReference(api: PluginApi)
 {
@@ -69,12 +33,13 @@ async function applyMod(api: PluginApi)
     const sgps = await importSpriteGroupPalettes(api);
 }
 
+const api: PluginApi = new PluginApi(project, pluginName, 'mod');
 //extractReference(api);
 applyMod(api);
 
-module.exports =
-{
-    name: 'EbsrcSpriteGroupsPlugin',
-    applyMod: applyMod,
-    extractReference: extractReference,
-};
+// module.exports =
+// {
+//     name: 'EbsrcSpriteGroupsPlugin',
+//     applyMod: applyMod,
+//     extractReference: extractReference,
+// };

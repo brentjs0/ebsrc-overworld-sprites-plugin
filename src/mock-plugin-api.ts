@@ -1,6 +1,7 @@
 // An instance of PluginApi (below) is provided to all javascript plugins
 import * as fs from 'fs-extra';
 import { join as joinPath } from 'path';
+import { Project } from './mock-project';
 import * as utils from './utility';
 
 // Filters files with optional prefix and suffix
@@ -18,14 +19,7 @@ function filterFiles(list: string[], prefix: string | undefined, suffix: string 
     return list;
 }
 
-export type Project =
-{
-    path: string;
-    ebsrcPath: string;
-    ebsrcListing: Promise<string[]>;
-    ebdestPath: string;
-    referencePath: string;
-}
+export const pluginName = 'EbsrcSpriteGroupsPlugin';
 
 // Note throughout: all files paths, relative to either the mod folder or the
 // ebsrc folder, as appropriate.

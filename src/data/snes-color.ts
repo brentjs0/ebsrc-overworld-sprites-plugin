@@ -7,7 +7,7 @@ export type SnesColor =
     green: Component;
     blue: Component;
     isTransparent: boolean;
-    toRgbaColor: (scalingMethod?: ColorScalingMethod) => RgbaColor;
+    toRgbaColor: (scalingMethod?: ColorScalingMethods) => RgbaColor;
 };
 
 export type Component =
@@ -16,7 +16,11 @@ export type Component =
     16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 |
     24 | 25 | 26 | 27 | 28 | 29 | 30 | 31;
 
-export type ColorScalingMethod = 'default' | 'CoilSnake';
+export enum ColorScalingMethods
+{
+    Default = 'default',
+    CoilSnake = 'coilsnake'
+}
 
 export function SnesColor(red: number, green: number, blue: number, isTransparent = false): SnesColor
 {
@@ -89,9 +93,9 @@ const eightBitValues: number[] =
     0xff  // 31 -> 255 (+7)
 ];
 
-function toRgbaColor(this: SnesColor, scalingMethod: ColorScalingMethod = 'default')
+function toRgbaColor(this: SnesColor, scalingMethod: ColorScalingMethods = ColorScalingMethods.Default)
 {
-    if (scalingMethod === 'default')
+    if (scalingMethod === ColorScalingMethods.Default)
     {
         return RgbaColor(
             eightBitValues[this.red],

@@ -63,6 +63,7 @@
             "warn",
             "windows"
         ],
+        "no-debugger": "warn",
         "object-curly-spacing":
         [
             "warn",
