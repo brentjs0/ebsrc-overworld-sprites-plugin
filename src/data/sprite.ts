@@ -1,69 +1,48 @@
-import { isNullish, isNullishOrEmpty } from '../utility';
+import { isNullish, isNullishOrEmpty, returnOrThrowErrorMessage, toTitleCase } from '../utility';
 
-export type Sprite = BaseSprite &
+export type Sprite =
 {
-    'Binary File Path': string;
-}
-
-export function validateExtractedSprite(value: Partial<Sprite>): string | undefined
-{
-    const errorMessage = validateIncompleteExtractedSprite(value);
-    if (errorMessage)
-    {
-        return errorMessage;
-    }
-    
-    if (isNullishOrEmpty(value?.['Binary File Path']))
-    {
-        getMissingSpritePropertyErrorMessage('Binary File Path');
-    }
-
-    return undefined;
+    binaryFilePath: string;
+    binaryLabel: string;
+    flipGraphicsHorizontally: boolean;
+    swimFlag: boolean;
 }
 
 export type SpriteKey = keyof Sprite;
-export const spriteKeyDisplayOrder: SpriteKey[] =
-[
-    'Binary File Path',
-    'Binary Label',
-    'Flip Graphics Horizontally',
-    'Swim Flag'
-];
 
-export type IncompleteSprite = BaseSprite &
+export function validateExtractedSprite(value: Partial<Sprite>, throwOnError: boolean, validateBinaryFilePath: boolean): string | undefined
 {
-    'Binary File Path'?: string;
-}
-
-export function validateIncompleteExtractedSprite(value: Partial<Sprite>): string | undefined
-{
-    if (isNullishOrEmpty(value?.['Binary Label']))
+    if (isNullishOrEmpty(value.binaryLabel))
     {
-        return getMissingSpritePropertyErrorMessage('Binary Label');
+        return returnMissingPropMessageOrThrow('binaryLabel', throwOnError);
     }
 
-    if (isNullish(value?.['Flip Graphics Horizontally']))
+    if (isNullish(value.flipGraphicsHorizontally))
     {
-        return getMissingSpritePropertyErrorMessage('Flip Graphics Horizontally');
+        return returnMissingPropMessageOrThrow('flipGraphicsHorizontally', throwOnError);
     }
 
-    if (isNullish(value?.['Swim Flag']))
+    if (isNullish(value.swimFlag))
     {
-        return getMissingSpritePropertyErrorMessage('Swim Flag');
+        return returnMissingPropMessageOrThrow('swimFlag', throwOnError);
+    }
+
+    if (!validateBinaryFilePath)
+    {
+        return undefined;
+    }
+
+    if (isNullishOrEmpty(value.binaryFilePath))
+    {
+        return returnMissingPropMessageOrThrow('binaryFilePath', throwOnError);
     }
 
     return undefined;
 }
 
-type BaseSprite =
+function returnMissingPropMessageOrThrow(propertyName: SpriteKey, throwError: boolean): string
 {
-    'Binary Label': string;
-    'Swim Flag': boolean;
-
-    'Flip Graphics Horizontally': boolean;
-}
-
-function getMissingSpritePropertyErrorMessage(propertyName: SpriteKey)
-{
-    return `Sprite data without a(n) "${propertyName}" value was encountered.`;
+    return returnOrThrowErrorMessage(
+        `Sprite data without a(n) "${toTitleCase(propertyName)}" value was encountered.`,
+        throwError);
 }

@@ -1,187 +1,229 @@
-import { IncompleteSprite, Sprite, validateExtractedSprite } from './sprite';
-import { isNullish, isNullishOrEmpty } from '../utility';
+import { Sprite, validateExtractedSprite } from './sprite';
+import { isNullish, isNullishOrEmpty, returnOrThrowErrorMessage, toTitleCase } from '../utility';
 
-export type SpriteGroup = BaseSpriteGroup &
+export type CSSpriteGroup =
 {
-    'Binary Bank Path': string;
-    'Sprites'?: Sprite[];
+    'East/West Collision Height': number;
+    'East/West Collision Width': number;
+    'Length': number;
+    'North/South Collision Height': number;
+    'North/South Collision Width': number;
+    'Size': SpriteGroupSize;
+    'Swim Flags': boolean[];
 };
 
+export type SpriteGroup = CSSpriteGroup &
+{
+    'Palette Autodetect Override'?: number;
+
+    label: string;
+    binaryLabel: string;
+    pngFilePath: string;
+    tilesWide: number;
+    tilesHigh: number;
+    paletteIndex: number;
+
+    binaryBankPath: string;
+    sprites: Sprite[];
+};
+
+export type IncompleteSpriteGroup = Omit<Partial<SpriteGroup>, 'sprites'> & { sprites?: Partial<Sprite>[] };
+
+export type SpriteGroupSize =
+    '16x16' | '16x16 2' | '24x16' | '32x16' | '48x16' | '16x24' | '24x24' | '16x32' |
+    '32x32' | '48x32' | '24x40' | '16x48' | '32x48' | '48x48' | '64x48' | '64x64' | '64x80';
+
+export type SpriteMap = 
+{
+    spriteGroupSize: SpriteGroupSize;
+    tilesWide: number;
+    tilesHigh: number;
+}
+
+export const spriteMaps: SpriteMap[] =
+[
+    { spriteGroupSize: '16x16', tilesWide: 2, tilesHigh: 2 },
+    { spriteGroupSize: '16x16 2', tilesWide: 2, tilesHigh: 2 },
+    { spriteGroupSize: '24x16', tilesWide: 3, tilesHigh: 2 },
+    { spriteGroupSize: '32x16', tilesWide: 4, tilesHigh: 2 },
+    { spriteGroupSize: '48x16', tilesWide: 6, tilesHigh: 2 },
+    { spriteGroupSize: '16x24', tilesWide: 2, tilesHigh: 3 },
+    { spriteGroupSize: '24x24', tilesWide: 3, tilesHigh: 3 },
+    { spriteGroupSize: '16x32', tilesWide: 2, tilesHigh: 4 },
+    { spriteGroupSize: '32x32', tilesWide: 4, tilesHigh: 4 },
+    { spriteGroupSize: '48x32', tilesWide: 6, tilesHigh: 4 },
+    { spriteGroupSize: '24x40', tilesWide: 3, tilesHigh: 5 },
+    { spriteGroupSize: '16x48', tilesWide: 2, tilesHigh: 6 },
+    { spriteGroupSize: '32x48', tilesWide: 4, tilesHigh: 6 },
+    { spriteGroupSize: '48x48', tilesWide: 6, tilesHigh: 6 },
+    { spriteGroupSize: '64x48', tilesWide: 8, tilesHigh: 6 },
+    { spriteGroupSize: '64x64', tilesWide: 8, tilesHigh: 8 },
+    { spriteGroupSize: '64x80', tilesWide: 8, tilesHigh: 10 }
+];
+
+export const spriteGroupSizes: SpriteGroupSize[] =
+[
+    '16x16',
+    '16x16 2',
+    '24x16',
+    '32x16',
+    '48x16',
+    '16x24',
+    '24x24',
+    '16x32',
+    '32x32',
+    '48x32',
+    '24x40',
+    '16x48',
+    '32x48',
+    '48x48',
+    '64x48',
+    '64x64',
+    '64x80'
+];
 
 export type SpriteGroupKey = keyof SpriteGroup;
 export const spriteGroupKeyDisplayOrder: SpriteGroupKey[] =
 [
-    'Label',
-    'Binary Bank Path',
-    'Binary Label',
-    'PNG File Path',
-    'Original Palette',
-
     'East/West Collision Height',
     'East/West Collision Width',
     'Length',
     'North/South Collision Height',
     'North/South Collision Width',
     'Size',
-
-    'Sprites',
-
-    'Offset 12 to 15',
-    'Offset 16 to 23',
-    'Offset 24 to 27',
-    'Offset 31'
+    'Palette Autodetect Override',
+    'Swim Flags'
 ];
 
-export function validateExtractedSpriteGroup(value: IncompleteSpriteGroup | Partial<SpriteGroup>): string | undefined
+export function validateExtractedSpriteGroup(
+    value: IncompleteSpriteGroup | Partial<SpriteGroup>, 
+    throwOnError: boolean,
+    valdateSpritesAndBankPath: boolean): string | undefined
 {
-    const errorMessage = validateIncompleteExtractedSpriteGroup(value);
-    if (errorMessage !== undefined)
+    if (isNullishOrEmpty(value.label))
     {
-        return errorMessage;
+        return returnMissingPropMessageOrThrow('label', throwOnError);
     }
-    
-    if (value['Sprites'] === undefined || value['Sprites'].length === 0)
+
+    if (isNullish(value['Length']))
+    {
+        return returnMissingPropMessageOrThrow('Length', throwOnError);
+    }
+
+    if (isNullishOrEmpty(value['Swim Flags']))
+    {
+        return returnMissingPropMessageOrThrow('Swim Flags', throwOnError);
+    }
+
+    if (value['Length'] === 0)
     {
         return undefined;
     }
 
-    if (isNullishOrEmpty(value?.['Binary Bank Path']))
+    if (isNullish(value.sprites))
     {
-        return getMissingSpriteGroupPropertyErrorMessage('Binary Bank Path');
+        return returnMissingPropMessageOrThrow('sprites', throwOnError);
     }
 
-    for (const sprite of value['Sprites'])
+    if (value.sprites.length < 8)
     {
-        const spriteErrorMessage: string | undefined = validateExtractedSprite(sprite);
-        if (spriteErrorMessage !== undefined)
-        {
-            return spriteErrorMessage;
-        }
+        return returnOrThrowErrorMessage(
+            'Sprite group data was encountered with fewer than 8 sprites.',
+            throwOnError);
+    }
+
+    if (isNullish(value['East/West Collision Height']))
+    {
+        return returnMissingPropMessageOrThrow('East/West Collision Height', throwOnError);
+    }
+
+    if (isNullish(value['East/West Collision Width']))
+    {
+        return returnMissingPropMessageOrThrow('East/West Collision Width', throwOnError);
+    }
+
+    if (isNullish(value['North/South Collision Height']))
+    {
+        return returnMissingPropMessageOrThrow('North/South Collision Height', throwOnError);
+    }
+
+    if (isNullish(value['North/South Collision Width']))
+    {
+        return returnMissingPropMessageOrThrow('North/South Collision Width', throwOnError);
+    }
+
+    if (isNullish(value['Size']))
+    {
+        return returnMissingPropMessageOrThrow('Size', throwOnError);
+    }
+
+    if (!spriteGroupSizes.includes(value['Size']))
+    {
+        return returnOrThrowErrorMessage(
+            'Sprite group data was encountered with an invalid Size value.',
+            throwOnError);
+    }
+
+    if (value['Swim Flags'].length < value['Length'])
+    {
+        return returnOrThrowErrorMessage(
+            'Sprite group data was encountered with a number of swim flags less than its Length.',
+            throwOnError);
+    }
+
+    if (isNullishOrEmpty(value.paletteIndex))
+    {
+        return returnMissingPropMessageOrThrow('paletteIndex', throwOnError);
+    }
+
+    if (value.paletteIndex === 5 && isNullish(value['Palette Autodetect Override']))
+    {
+        return returnOrThrowErrorMessage(
+            'Sprite group data was encountered with a palette of 5 or 6 but no Palette Autodetect Override.',
+            throwOnError);
+    }
+
+    if (isNullishOrEmpty(value.binaryLabel))
+    {
+        return returnMissingPropMessageOrThrow('binaryLabel', throwOnError);
+    }
+
+    if (isNullishOrEmpty(value.pngFilePath))
+    {
+        return returnMissingPropMessageOrThrow('pngFilePath', throwOnError);
+    }
+
+    if (isNullish(value.tilesWide))
+    {
+        return returnMissingPropMessageOrThrow('tilesWide', throwOnError);
+    }
+
+    if (isNullish(value.tilesHigh))
+    {
+        return returnMissingPropMessageOrThrow('tilesHigh', throwOnError);
+    }
+
+    if (!valdateSpritesAndBankPath)
+    {
+        return undefined;
+    }
+
+    if (isNullishOrEmpty(value.binaryBankPath))
+    {
+        return returnMissingPropMessageOrThrow('binaryBankPath', throwOnError);
+    }
+
+    for (const sprite of value.sprites ?? [])
+    {
+        validateExtractedSprite(sprite, throwOnError, true);
     }
 
     return undefined;
 }
 
-export type IncompleteSpriteGroup = BaseSpriteGroup &
+function returnMissingPropMessageOrThrow(propertyName: SpriteGroupKey, throwError: boolean): string
 {
-    'Binary Bank Path'?: string;
-    'Sprites'?: IncompleteSprite[];
-};
-
-
-export function validateIncompleteExtractedSpriteGroup(value: Partial<IncompleteSpriteGroup>): string | undefined
-{
-    if (isNullishOrEmpty(value?.['Label']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Label');
-    }
-
-    if (isNullish(value?.['Sprites']))
-    {
-        return undefined;
-    }
-
-    if (isNullishOrEmpty(value?.['Binary Label'])) 
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Binary Label');
-    }
-
-    if (isNullishOrEmpty(value?.['PNG File Path']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('PNG File Path');
-    }
-
-    if (isNullish(value?.['Tiles Wide']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Tiles Wide');
-    }
-
-    if (isNullish(value?.['Tiles High']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Tiles High');
-    }
-
-    if (isNullish(value?.['Original Palette']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Original Palette');
-    }
-
-    if (value['Sprites'].length < 8)
-    {
-        return 'Sprite group data was encountered with fewer than 8 sprites.';
-    }
-
-    if (isNullish(value?.['Offset 12 to 15']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Offset 12 to 15');
-    }
-
-    if (isNullish(value?.['Offset 16 to 23']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Offset 16 to 23');
-    }
-
-    if (isNullish(value?.['Offset 24 to 27']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Offset 24 to 27');
-    }
-
-    if (isNullish(value?.['Offset 31']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Offset 31');
-    }
-
-    if (isNullish(value?.['North/South Collision Width']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('North/South Collision Width');
-    }
-
-    if (isNullish(value?.['North/South Collision Height']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('North/South Collision Height');
-    }
-
-    if (isNullish(value?.['East/West Collision Width']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('East/West Collision Width');
-    }
-
-    if (isNullish(value?.['East/West Collision Height']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('East/West Collision Height');
-    }
-
-    if (isNullish(value?.['Length']))
-    {
-        return getMissingSpriteGroupPropertyErrorMessage('Length');
-    }
-
-    return undefined;
-}
-
-type BaseSpriteGroup =
-{
-    'Label': string;
-    'Binary Label': string;
-    'PNG File Path': string;
-    'Original Palette': number;
-
-    'East/West Collision Height': number;
-    'East/West Collision Width': number;
-    'Length': number;
-    'North/South Collision Height': number;
-    'North/South Collision Width': number;
-    'Size': string;
-
-    'Tiles Wide': number;
-    'Tiles High': number;
-    'Offset 12 to 15': number;
-    'Offset 16 to 23': number;
-    'Offset 24 to 27': number;
-    'Offset 31': number;
-};
-
-function getMissingSpriteGroupPropertyErrorMessage(propertyName: SpriteGroupKey)
-{
-    return `Sprite group data without a(n) "${propertyName}" value was encountered.`;
+    return returnOrThrowErrorMessage(
+        `Sprite group data without a(n) "${toTitleCase(propertyName)}" value was encountered.`,
+        throwError);
 }

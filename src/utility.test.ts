@@ -16,7 +16,7 @@ describe('utility.ts', function ()
                 ['ABC', 'abc'],
                 ['abc', 'ABC'],
                 ['', ''],
-                ['i', 'I'],
+                ['i', 'I']
             ];
 
             for (const [string1, string2] of equalPairs)
@@ -34,7 +34,7 @@ describe('utility.ts', function ()
                 ['ABC', 'ABCD'],
                 ['aabc', ''],
                 ['', 'a'],
-                ['á', 'a'],
+                ['á', 'a']
             ];
 
             for (const [string1, string2] of unequalPairs)

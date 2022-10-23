@@ -23,6 +23,7 @@
     ],
     "rules":
     {
+        "@typescript-eslint/explicit-function-return-type": "warn",
         "@typescript-eslint/no-explicit-any":
         [
             "warn",
@@ -45,6 +46,7 @@
             "warn",
             "never"
         ],
+        "eqeqeq": "error",
         "function-call-argument-newline":
         [
             "warn",
@@ -81,11 +83,6 @@
                 "prev": "*",
                 "next": "return"
             }
-        ],
-        "quote-props":
-        [
-            "warn",
-            "consistent"
         ],
         "quotes":
         [

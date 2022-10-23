@@ -1,5 +1,5 @@
 import { IncompleteSpriteGroup, SpriteGroup } from './data/sprite-group';
-import { IncompleteSpriteGroupPalette, SpriteGroupPalette } from './data/sprite-group-palette';
+import { SpriteGroupPalette } from './data/sprite-group-palette';
 import
 {
     extractBank03,
@@ -7,16 +7,16 @@ import
     extractPaletteBinaries,
     extractSpriteGroupBinaries,
     extractSpriteGroupingData,
-    extractSpriteGroupingPointers,
+    extractSpriteGroupingPointers
 } from './extract-reference';
 
 import PluginApi, { pluginName } from './mock-plugin-api';
 import { importSpriteGroupPalettes } from './apply-mod';
 import { project } from './mock-project';
 
-async function extractReference(api: PluginApi)
+async function extractReference(api: PluginApi): Promise<void>
 {
-    const incompleteSpriteGroupPalettes: IncompleteSpriteGroupPalette[] = await extractBank03(api);
+    const incompleteSpriteGroupPalettes: Partial<SpriteGroupPalette>[] = await extractBank03(api);
     const spriteGroupPalettes: SpriteGroupPalette[] = await extractPaletteBinaries(api, incompleteSpriteGroupPalettes);
 
     const spriteGroupingDataLabels: string[] = await extractSpriteGroupingPointers(api);
@@ -26,7 +26,7 @@ async function extractReference(api: PluginApi)
     await extractSpriteGroupBinaries(api, spriteGroups, spriteGroupPalettes);
 }
 
-async function applyMod(api: PluginApi)
+async function applyMod(api: PluginApi): Promise<void>
 {
     // await getPngPalette(PNG.sync.read(await api.getModBin('test-reference.png')));
     // await getPngPalette(PNG.sync.read(await api.getModBin('test-mspaint.png')));
@@ -34,8 +34,8 @@ async function applyMod(api: PluginApi)
 }
 
 const api: PluginApi = new PluginApi(project, pluginName, 'mod');
-//extractReference(api);
-applyMod(api);
+extractReference(api);
+//applyMod(api);
 
 // module.exports =
 // {

@@ -29,7 +29,7 @@ export async function importSpriteGroupPalettes(api: PluginApi): Promise<SpriteG
                 const obj: unknown = objects[i];
                 const spriteGroupPalette: Partial<SpriteGroupPalette> = {};
 
-                spriteGroupPalette['Binary File Path'] = `src/bin/US/overworld_sprites/${i}.pal`;
+                spriteGroupPalette.binaryFilePath = `src/bin/US/overworld_sprites/${i}.pal`;
 
                 if (typeof obj === 'object' &&
                     obj !== null &&

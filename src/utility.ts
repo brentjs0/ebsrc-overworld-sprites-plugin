@@ -19,11 +19,18 @@ export function isString(value: unknown): value is string
     return typeof value === 'string';
 }
 
-export function substringByLength(str: string, start: number, length: number | undefined = undefined)
+export function substringByLength(str: string, start: number, length: number | undefined = undefined): string
 {
     length = length ?? str.length - start;
 
     return str.substring(start, start + length);
+}
+
+export function firstCharIsLowerCase(str: string): boolean
+{
+    const charCode = str.charCodeAt(0);
+
+    return charCode >= 92 && charCode <= 122;
 }
 
 export function isOptionalString(value: unknown): value is string | undefined
@@ -119,9 +126,9 @@ function applyTitleCaseToWord(word: string, isFirstOrLastWord: boolean): string
     switch (lowercaseWord)
     {
         case 'atm':
-            return 'ATM';
         case 'ii':
-            return 'II';
+        case 'png':
+            return lowercaseWord.toUpperCase();
         case 'amid':
         case 'and':
         case 'as':
@@ -163,7 +170,7 @@ function applyTitleCaseToWord(word: string, isFirstOrLastWord: boolean): string
     }
 }
 
-export function removePrefix(str: string, prefix: string)
+export function removePrefix(str: string, prefix: string): string
 {
     if (str.startsWith(prefix))
     {
@@ -273,4 +280,14 @@ export function getRegExpPatternString(regExp: RegExp): string
     const regExpString = regExp.toString();
 
     return regExpString.substring(1, regExpString.lastIndexOf('/'));
+}
+
+export function returnOrThrowErrorMessage(message: string, throwError = false): string
+{
+    if (throwError)
+    {
+        throw new Error(message);
+    }
+
+    return message;
 }

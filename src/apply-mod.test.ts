@@ -21,7 +21,7 @@ describe('apply-mod.ts', function ()
             const expectation: SpriteGroupPalette[] = 
             [
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/0.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/0.pal',
                     'Palette':
                     [
                         RgbaColor(112, 112, 112, 255),
@@ -43,7 +43,7 @@ describe('apply-mod.ts', function ()
                     ].map(rgba => rgba.toSnesColor(ColorScalingMethods.CoilSnake))
                 },
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/1.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/1.pal',
                     'Palette':
                     [
                         RgbaColor(168, 200, 128, 255),
@@ -65,7 +65,7 @@ describe('apply-mod.ts', function ()
                     ].map(rgba => rgba.toSnesColor(ColorScalingMethods.CoilSnake))
                 },
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/2.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/2.pal',
                     'Palette':
                     [
                         RgbaColor(96, 152, 112, 255),
@@ -87,7 +87,7 @@ describe('apply-mod.ts', function ()
                     ].map(rgba => rgba.toSnesColor(ColorScalingMethods.CoilSnake))
                 },
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/3.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/3.pal',
                     'Palette':
                     [
                         RgbaColor(216, 200, 80, 255),
@@ -109,7 +109,7 @@ describe('apply-mod.ts', function ()
                     ].map(rgba => rgba.toSnesColor(ColorScalingMethods.CoilSnake))
                 },
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/4.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/4.pal',
                     'Palette':
                     [
                         RgbaColor(0, 0, 0, 255),
@@ -131,7 +131,7 @@ describe('apply-mod.ts', function ()
                     ].map(rgba => rgba.toSnesColor(ColorScalingMethods.CoilSnake))
                 },
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/5.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/5.pal',
                     'Palette':
                     [
                         RgbaColor(0, 176, 128, 255),
@@ -153,7 +153,7 @@ describe('apply-mod.ts', function ()
                     ].map(rgba => rgba.toSnesColor(ColorScalingMethods.CoilSnake))
                 },
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/6.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/6.pal',
                     'Palette':
                     [
                         RgbaColor(144, 224, 128, 255),
@@ -175,7 +175,7 @@ describe('apply-mod.ts', function ()
                     ].map(rgba => rgba.toSnesColor(ColorScalingMethods.CoilSnake))
                 },
                 {
-                    'Binary File Path': 'src/bin/US/overworld_sprites/7.pal',
+                    binaryFilePath: 'src/bin/US/overworld_sprites/7.pal',
                     'Palette':
                     [
                         RgbaColor(96, 104, 248, 255),

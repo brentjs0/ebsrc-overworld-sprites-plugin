@@ -31,7 +31,7 @@ export function RgbaColor(red: number, green: number, blue: number, alpha: numbe
     throw new Error('An RgbaColor object could not be created from the provided values.');
 }
 
-function toSnesColor(this: RgbaColor, scalingMethod: ColorScalingMethods = ColorScalingMethods.Default)
+function toSnesColor(this: RgbaColor, scalingMethod: ColorScalingMethods = ColorScalingMethods.Default): SnesColor
 {
     if (scalingMethod === ColorScalingMethods.Default)
     {

@@ -59,7 +59,7 @@ export function isDatumTypeString(str: string): str is DatumTypeString
     return ['byte', 'word', 'dword'].includes(str);
 }
 
-export function countCA65DatumBytes(data: CA65Datum[])
+export function countCA65DatumBytes(data: CA65Datum[]): number
 {
     let byteCount = 0;
     for (const datum of data)
@@ -81,7 +81,7 @@ export function countCA65DatumBytes(data: CA65Datum[])
     return byteCount;
 }
 
-export function getArgumentListFromPseudoFunctionCall(pseudoFunctionCall: string)
+export function getArgumentListFromPseudoFunctionCall(pseudoFunctionCall: string): string
 {
     return pseudoFunctionCall.slice(
         pseudoFunctionCall.indexOf('(') + 1,
@@ -96,7 +96,7 @@ export function isCA65StringLiteral(value: unknown): value is string
         lastItem(value) === '"';
 }
 
-export function getTextFromCA65StringLiteral(stringExpression: string)
+export function getTextFromCA65StringLiteral(stringExpression: string): string
 {
     return substringByLength(stringExpression, 1, stringExpression.length - 2);
 }
@@ -160,7 +160,7 @@ function createLine(lineNumber: number, regExpMatch: RegExpMatchArray): CA65Line
         instruction: regExpMatch.groups?.instruction,
         operandList: regExpMatch.groups?.operands,
         comment: regExpMatch.groups?.comment,
-        isSignificantToAssembler: !isNullishOrEmpty(regExpMatch.groups?.label) || !isNullishOrEmpty(regExpMatch.groups?.instruction),
+        isSignificantToAssembler: !isNullishOrEmpty(regExpMatch.groups?.label) || !isNullishOrEmpty(regExpMatch.groups?.instruction)
     };
 
     return line;

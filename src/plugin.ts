@@ -1,4 +1,12 @@
-export const yamlHeader = '# File Format: ebsrc-sprite-groups-plugin v1.0.0' as const;
+export const yamlHeader = '## File Format: ebsrc-sprite-groups-plugin v1.0.0' as const;
+
+export const spriteGroupPalettesYmlFileComment =
+`${yamlHeader}
+
+# Sprite group palettes should be edited in sprite_group_palettes.png when
+# using ebsrc-sprite-groups-plugin. This file exists to provide the above file
+# format header comment so that the plugin knows where to find sprite group
+# palette data when applying modifications to the project.`;
 
 export const filePaths =
 {

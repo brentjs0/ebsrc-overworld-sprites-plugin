@@ -8,6 +8,8 @@ export type SnesColor =
     blue: Component;
     isTransparent: boolean;
     toRgbaColor: (scalingMethod?: ColorScalingMethods) => RgbaColor;
+    equals: (otherSnesColor: SnesColor, ignoreTransparency?: boolean) => boolean;
+    calculateBrightness: () => number;
 };
 
 export type Component =
@@ -34,7 +36,9 @@ export function SnesColor(red: number, green: number, blue: number, isTransparen
             green: green,
             blue: blue,
             isTransparent: isTransparent,
-            toRgbaColor: toRgbaColor
+            toRgbaColor: toRgbaColor,
+            equals: equals,
+            calculateBrightness: calculateBrightness
         };
 
         return snesColor;
@@ -93,7 +97,7 @@ const eightBitValues: number[] =
     0xff  // 31 -> 255 (+7)
 ];
 
-function toRgbaColor(this: SnesColor, scalingMethod: ColorScalingMethods = ColorScalingMethods.Default)
+function toRgbaColor(this: SnesColor, scalingMethod: ColorScalingMethods = ColorScalingMethods.Default): RgbaColor
 {
     if (scalingMethod === ColorScalingMethods.Default)
     {
@@ -109,6 +113,19 @@ function toRgbaColor(this: SnesColor, scalingMethod: ColorScalingMethods = Color
         this.green << 3,
         this.blue << 3,
         this.isTransparent ? 0 : 255);
+}
+
+function equals(this: SnesColor, otherSnesColor: SnesColor, ignoreTransparency = false): boolean
+{
+    return this.red === otherSnesColor.red &&
+        this.green === otherSnesColor.green &&
+        this.blue === otherSnesColor.blue &&
+        (ignoreTransparency || this.isTransparent === otherSnesColor.isTransparent);
+}
+
+function calculateBrightness(this: SnesColor): number
+{
+    return ((this.red / 31) * 0.2126) + ((this.green / 31) * 0.7152) + ((this.blue / 31) * 0.0722);
 }
 
 function checkComponentArgument(parameterName: 'red' | 'green' | 'blue', value: number): value is Component

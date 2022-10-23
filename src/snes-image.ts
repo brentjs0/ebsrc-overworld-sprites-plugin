@@ -71,14 +71,14 @@ function getPaletteColorIndex(this: SnesImage, snesColor: SnesColor): number
     return -1;
 }
 
-function setPixelValue(this: SnesImage, x: number, y: number, colorIndexValue: number)
+function setPixelValue(this: SnesImage, x: number, y: number, colorIndexValue: number): void
 {
     checkPixelCoordinateArguments(this, x, y);
     const dataIndex = getPixelValueIndex(this, x, y);
     this[pixelValuesSymbol][dataIndex] = colorIndexValue;
 }
 
-function checkPixelCoordinateArguments(indexedPng: SnesImage, x: number, y: number)
+function checkPixelCoordinateArguments(indexedPng: SnesImage, x: number, y: number): void
 {
     assertArgumentIsInteger('x', x);
     if (x >= indexedPng[widthSymbol])
@@ -93,7 +93,7 @@ function checkPixelCoordinateArguments(indexedPng: SnesImage, x: number, y: numb
     }
 }
 
-function assertArgumentIsInteger(parameterName: string, value: number)
+function assertArgumentIsInteger(parameterName: string, value: number): void
 {
     if (!Number.isInteger(value))
     {
@@ -101,12 +101,12 @@ function assertArgumentIsInteger(parameterName: string, value: number)
     }
 }
 
-function getPixelValueIndex(snesImage: SnesImage, x: number, y: number)
+function getPixelValueIndex(snesImage: SnesImage, x: number, y: number): number
 {
     return (snesImage[widthSymbol] * y) + x;
 }
 
-function fill(this: SnesImage, colorIndex: number)
+function fill(this: SnesImage, colorIndex: number): void
 {
     this[pixelValuesSymbol].fill(colorIndex);
 }
