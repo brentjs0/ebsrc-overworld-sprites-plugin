@@ -529,17 +529,23 @@ export async function extractBank03(api: PluginApi): Promise<Partial<SpriteGroup
     return spriteGroupPalettes;
 }
 
+const colorsPerPalette = 16;
+const paletteCount = 8;
+
 export async function extractPaletteBinaries(api: PluginApi, incompletePalettes: Partial<SpriteGroupPalette>[]): Promise<SpriteGroupPalette[]>
 {
-    const pngWidth = 18;
-    const pngHeight = 17;
-    const lastPaletteIndex = incompletePalettes.length * 16;
+    const swatchScale = 23;
+    const gap = 23;
+
+    const pngWidth = (colorsPerPalette * swatchScale) + (gap * 2);
+    const pngHeight = (paletteCount * swatchScale) + ((paletteCount + 1) * gap);
+    const lastPngPaletteIndex = incompletePalettes.length * colorsPerPalette;
 
     let pngPaletteIndex = 0;
 
     const snesImage: SnesImage = SnesImage(pngWidth, pngHeight);
-    snesImage.palette[lastPaletteIndex] = SnesColor(15, 15, 15);
-    snesImage.fill(lastPaletteIndex);
+    snesImage.palette[lastPngPaletteIndex] = SnesColor(15, 15, 15);
+    snesImage.fill(lastPngPaletteIndex);
 
     for (let paletteNumber = 0; paletteNumber < incompletePalettes.length; ++paletteNumber)
     {
@@ -552,8 +558,8 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
         }
         const buffer: Buffer = await api.getSourceBin(spriteGroupPalette.binaryFilePath);
 
-        const y = (paletteNumber * 2) + 1;
-        let x = 1;
+        const originY = (paletteNumber * swatchScale) + ((paletteNumber + 1) * gap);
+        let originX = gap;
 
         for (let bufferOffset = 0; bufferOffset < buffer.length; bufferOffset += 2)
         {
@@ -566,10 +572,15 @@ export async function extractPaletteBinaries(api: PluginApi, incompletePalettes:
             spriteGroupPalette.Palette.push(snesColor);
 
             snesImage.palette[pngPaletteIndex] = SnesColor(red5, green5, blue5);
-            snesImage.setPixelValue(x, y, pngPaletteIndex);
+            snesImage.drawSolidRectangle(
+                originX,
+                originY,
+                swatchScale,
+                swatchScale,
+                pngPaletteIndex);
 
             pngPaletteIndex++;
-            x++;
+            originX += swatchScale;
         }
     }
 

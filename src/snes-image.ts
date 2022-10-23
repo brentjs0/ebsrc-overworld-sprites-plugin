@@ -20,6 +20,12 @@ export type SnesImage =
     getPaletteColorIndex: (snesColor: SnesColor) => number;
     setPixelValue: (x: number, y: number, colorIndexValue: number) => void;
     fill: (colorIndexValue: number) => void;
+    drawSolidRectangle: (
+        originX: number,
+        originY: number,
+        width: number,
+        height: number,
+        colorIndexValue: number) => void
     toPngBuffer: () => Promise<Buffer>;
 }
 
@@ -37,6 +43,7 @@ export function SnesImage(width: number, height: number, palette: SnesColor[] | 
         getPaletteColorIndex: getPaletteColorIndex,
         setPixelValue: setPixelValue,
         fill: fill,
+        drawSolidRectangle: drawSolidRectangle,
         toPngBuffer: toPngBuffer
     };
     
@@ -73,31 +80,55 @@ function getPaletteColorIndex(this: SnesImage, snesColor: SnesColor): number
 
 function setPixelValue(this: SnesImage, x: number, y: number, colorIndexValue: number): void
 {
-    checkPixelCoordinateArguments(this, x, y);
+    checkPixelCoordinateArgument('x', x, this[widthSymbol] - 1);
+    checkPixelCoordinateArgument('y', y, this[heightSymbol] - 1);
     const dataIndex = getPixelValueIndex(this, x, y);
     this[pixelValuesSymbol][dataIndex] = colorIndexValue;
 }
 
-function checkPixelCoordinateArguments(indexedPng: SnesImage, x: number, y: number): void
+function drawSolidRectangle(
+    this: SnesImage,
+    originX: number,
+    originY: number,
+    width: number,
+    height: number,
+    colorIndexValue: number): void
 {
-    assertArgumentIsInteger('x', x);
-    if (x >= indexedPng[widthSymbol])
-    {
-        throw new Error('The value of "x" must be less than the width of the image.');
-    }
+    const oppositeX = originX + width;
+    const oppositeY = originY + height;
 
-    assertArgumentIsInteger('y', y);
-    if (y >= indexedPng[heightSymbol])
+    const [startX, endX] = originX < oppositeX
+        ? [originX, oppositeX]
+        : [oppositeX, originX];
+
+    const [startY, endY] = originY < oppositeY
+        ? [originY, oppositeY]
+        : [oppositeY, originY];
+
+    for (let y = startY; y < endY; ++y)
     {
-        throw new Error('The value of "y" must be less than the height of the image.');
+        for (let x = startX; x < endX; ++x)
+        {
+            this.setPixelValue(x, y, colorIndexValue);
+        }
     }
 }
 
-function assertArgumentIsInteger(parameterName: string, value: number): void
+function checkPixelCoordinateArgument(parameterName: string, argumentValue: number, maxValue: number, minValue = 0): void
 {
-    if (!Number.isInteger(value))
+    if (!Number.isInteger(argumentValue))
     {
         throw new Error(`The value of "${parameterName}" must be an integer.`);
+    }
+
+    if (argumentValue > maxValue)
+    {
+        throw new Error(`The value of "${parameterName}" must be ${maxValue} or less.`);
+    }
+
+    if (argumentValue < minValue)
+    {
+        throw new Error(`The value of "${parameterName}" must ${minValue} or greater.`);
     }
 }
 
